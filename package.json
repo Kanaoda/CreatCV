@@ -1,0 +1,35 @@
+{
+  "name": "creatcv",
+  "version": "1.0.0",
+  "description": "CreatCV — Premium CV & Resume Engine by Kanaoda",
+  "private": true,
+  "scripts": {
+    "sync:defaults": "node scripts/sync-defaults-from-export.mjs",
+    "extract:template-themes": "node scripts/extract-preset-themes.mjs",
+    "wordmark:generate": "node scripts/generate-wordmark-paths.mjs",
+    "predev": "npm run sync:defaults",
+    "dev": "vite",
+    "prebuild": "npm run sync:defaults",
+    "build": "vite build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cv",
+    "resume",
+    "creatcv",
+    "pdf",
+    "docx"
+  ],
+  "author": "Kanaoda",
+  "license": "MIT",
+  "dependencies": {
+    "docx": "^9.7.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "opentype.js": "^2.0.0",
+    "vite": "^4.5.3"
+  }
+}

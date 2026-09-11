@@ -1,0 +1,21 @@
+# Dependencies & build
+node_modules/
+dist/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Local / OS
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# Personal CV exports — never commit real resumes or photos
+*.personal.json
+*resume*personal*
+exports/
+tmp/
