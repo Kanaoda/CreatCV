@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/creat-cv-logo.svg" alt="CreatCV logo" width="72" height="72" />
+  <img src="public/logo.png" alt="CreatCV logo" width="280" />
 </p>
 
 <h1 align="center">CreatCV</h1>
