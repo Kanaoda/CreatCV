@@ -1,0 +1,11 @@
+{
+  "templateId": "corporate-navy",
+  "preset": "corporate-navy",
+  "paperTexture": "none",
+  "fontSizeRatio": "100%",
+  "spacingFactor": "1.0",
+  "photoFrameStyle": "preset",
+  "photoScale": "1.0",
+  "showSkillRatings": false,
+  "colors": {}
+}

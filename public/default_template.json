@@ -1,0 +1,204 @@
+{
+  "version": 2,
+  "data": {
+    "personal": {
+      "name": "[Your Full Name]",
+      "title": "[Your Professional Title | Key Skills | Industry]",
+      "email": "[your.email@example.com]",
+      "phone": "[+Country Code Phone Number]",
+      "address": "[City, Region, Country]",
+      "links": [
+        {
+          "label": "LinkedIn",
+          "url": "[https://linkedin.com/in/your-profile]"
+        },
+        {
+          "label": "Portfolio",
+          "url": "[https://your-portfolio.com]"
+        }
+      ],
+      "photo": "",
+      "summary": "[Write 3–5 concise bullet points about your professional strengths, years of experience, and what you bring to employers.]\n[Example: Experienced professional with X years in your field, skilled in key area A and B.]\n[Example: Proven track record delivering results for clients or teams in your industry.]\n[Example: Strong communicator and collaborator — replace every bracket line with your own words.]"
+    },
+    "employment": [
+      {
+        "id": "emp_0",
+        "company": "[Company Name]",
+        "location": "[City, Country]",
+        "role": "[Job Title]",
+        "period": "[Mon YYYY – Mon YYYY or Present]",
+        "subtext": "[Department | Focus area | Project type]",
+        "visible": true,
+        "splitRoles": true,
+        "roles": [],
+        "bullets": [
+          {
+            "id": "bullet_emp_0_0",
+            "text": "[Describe a key achievement with measurable impact — e.g. Led a project that improved X by Y%.]",
+            "visible": true
+          },
+          {
+            "id": "bullet_emp_0_1",
+            "text": "[Describe responsibilities — e.g. Managed cross-functional teams and stakeholder communication.]",
+            "visible": true
+          },
+          {
+            "id": "bullet_emp_0_2",
+            "text": "[Add more bullets or delete this line. Use the editor to reorder jobs and points.]",
+            "visible": true
+          }
+        ],
+        "projects": [
+          {
+            "id": "proj_0_0",
+            "title": "[Optional: Notable Project Name]",
+            "year": "[YYYY]",
+            "description": "[Brief project description — delete if not needed]",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "id": "emp_1",
+        "company": "[Previous Company]",
+        "location": "[City, Country]",
+        "role": "[Previous Job Title]",
+        "period": "[Mon YYYY – Mon YYYY]",
+        "subtext": "[Role focus or team context]",
+        "visible": true,
+        "splitRoles": true,
+        "roles": [],
+        "bullets": [
+          {
+            "id": "bullet_emp_1_0",
+            "text": "[Achievement or responsibility at this role.]",
+            "visible": true
+          }
+        ],
+        "projects": []
+      }
+    ],
+    "education": [
+      {
+        "id": "edu_0",
+        "degree": "[Degree or Qualification Name]",
+        "school": "[University / Institution Name]",
+        "period": "[Start Year – End Year]",
+        "visible": true,
+        "bullets": [
+          {
+            "id": "edu_bullet_0_0",
+            "text": "[Honours, GPA, relevant coursework, or thesis — optional]",
+            "visible": true
+          }
+        ]
+      }
+    ],
+    "skills": [
+      {
+        "id": "skill_0",
+        "category": "[Core Skills Category]",
+        "items": [
+          "Skill one",
+          "Skill two",
+          "Skill three"
+        ],
+        "itemsText": "Skill one, Skill two, Skill three",
+        "visible": true
+      },
+      {
+        "id": "skill_1",
+        "category": "[Tools & Technologies]",
+        "items": [
+          "Tool A",
+          "Tool B",
+          "Tool C"
+        ],
+        "itemsText": "Tool A, Tool B, Tool C",
+        "visible": true
+      }
+    ],
+    "languages": [
+      {
+        "id": "lang_0",
+        "name": "[Language 1]",
+        "level": "Native / Fluent",
+        "visible": true
+      },
+      {
+        "id": "lang_1",
+        "name": "[Language 2]",
+        "level": "Professional / Intermediate",
+        "visible": true
+      }
+    ],
+    "certifications": [
+      {
+        "id": "cert_0",
+        "name": "[Certification Name — delete if none]",
+        "issuer": "[Issuing Organisation]",
+        "date": "[Year or Validity]",
+        "url": "",
+        "visible": true
+      }
+    ],
+    "references": [
+      {
+        "id": "ref_0",
+        "name": "[Reference Name]",
+        "title": "[Job Title]",
+        "company": "[Company / Organisation]",
+        "phone": "[Phone]",
+        "email": "[Email]",
+        "visible": true
+      },
+      {
+        "id": "ref_1",
+        "name": "[Second Reference Name]",
+        "title": "[Their Title]",
+        "company": "[Their Company]",
+        "phone": "[Phone]",
+        "email": "[Email]",
+        "visible": true
+      }
+    ],
+    "sabbatical": {
+      "enabled": false,
+      "bullets": [
+        "[Optional: career break or sabbatical note — enable in editor if needed]"
+      ]
+    },
+    "availability": {
+      "lastSalary": "[Optional — e.g. HKD 42,000 / month]",
+      "lastSalaryVisible": false,
+      "expectedSalary": "[Optional]",
+      "expectedSalaryVisible": false,
+      "noticePeriod": "[Optional — e.g. 1 month]",
+      "noticePeriodVisible": false,
+      "availableFrom": "[Optional — e.g. Immediately]",
+      "availableFromVisible": false
+    },
+    "sections": {
+      "profile": true,
+      "employment": true,
+      "education": true,
+      "references": true,
+      "availability": false,
+      "languages": true,
+      "skills": true,
+      "certifications": true,
+      "sabbatical": false
+    }
+  },
+  "settings": {
+    "templateId": "corporate-navy",
+    "preset": "corporate-navy",
+    "paperTexture": "none",
+    "fontSizeRatio": "100%",
+    "spacingFactor": "1.0",
+    "photoFrameStyle": "preset",
+    "photoScale": "1.0",
+    "showSkillRatings": false,
+    "colors": {}
+  }
+}

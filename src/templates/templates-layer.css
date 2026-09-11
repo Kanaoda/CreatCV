@@ -1,0 +1,35 @@
+/**
+ * Template system layer — archetype + photo placement (data-driven).
+ * Theme colors/fonts come from JS (buildTemplateThemeCssVars), not per-template CSS blocks.
+ */
+
+[data-photo-placement="sidebar"] .cv-header .cv-profile-photo,
+[data-photo-placement="sidebar"] .cv-header img.cv-header-photo {
+  display: none !important;
+}
+
+[data-photo-placement="header"] .cv-sidebar-col .sidebar-avatar-container {
+  display: none !important;
+}
+
+/* Photo shapes — prefer data-photo-shape over data-preset lists */
+[data-photo-shape="circle"] .cv-profile-photo {
+  border-radius: 50% !important;
+}
+
+[data-photo-shape="arch"] .cv-header .cv-profile-photo,
+[data-photo-shape="arch"] .cv-header img {
+  border-top-left-radius: 55px !important;
+  border-top-right-radius: 55px !important;
+  border-bottom-left-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+}
+
+[data-photo-shape="rounded"] .cv-header .cv-profile-photo,
+[data-photo-shape="rounded"] .cv-header img {
+  border-radius: 12px !important;
+}
+
+[data-archetype="single-column"] .cv-page {
+  /* Alias for layout-direction-block — archetype is source of truth in template registry */
+}
