@@ -44,7 +44,7 @@ export function useResumeState(normalizeResumeData) {
   const [templateId, setTemplateId] = useState(
     () => readTemplateIdFromSettings(defaultAppSettings),
   );
-  const [viewMode, setViewMode] = useState('detailed');
+  const [viewMode, setViewMode] = useState('full-projects');
   const [activeTab, setActiveTab] = useState('personal'); // 'personal', 'employment', 'skills', 'other'
 
   // Advanced customization state (Canva-like custom controls over presets)

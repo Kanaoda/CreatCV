@@ -1634,9 +1634,9 @@ function App() {
               value={viewMode}
               onChange={(e) => setViewMode(e.target.value)}
             >
+              <option value="full-projects">Full CV + Projects (new page)</option>
               <option value="detailed">Detailed CV</option>
               <option value="concise">Concise Resume</option>
-              <option value="full-projects">Full CV + Projects (new page)</option>
               <option value="project-list">Project List only</option>
             </select>
           </div>
@@ -1657,7 +1657,7 @@ function App() {
             >
               1-Page
             </button>
-            <button type="button" className="btn btn-export" onClick={handleWordExport} title="Download as Word document">
+            <button type="button" className="btn btn-export" onClick={handleWordExport} title="Download ATS-friendly Word (.docx): single column, no sidebar layout — for HR systems. Use PDF/print for designed layout.">
               Word
             </button>
           </div>
