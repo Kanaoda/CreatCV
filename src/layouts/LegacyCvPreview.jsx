@@ -24,6 +24,13 @@ import {
 import { formatSkillDots, getSkillEntries } from '../cvPreview/skillRatings.js';
 import { getEffectiveSkillDisplay } from './skillDisplay.js';
 import { AVAILABILITY_FIELD_DEFS, isAvailabilityFieldShown } from '../availabilityFields.js';
+import {
+  findSkillSection,
+  getVisibleSkillCategories,
+  isSkillSectionVisible,
+  resolveSidebarOrder,
+  sectionHasVisibleContent,
+} from '../sidebarSections.js';
 
 /**
  * Frozen preview path for legacy templates (e.g. preset 12 modern-tech).
@@ -37,7 +44,6 @@ export function LegacyCvPreview({ model }) {
     template,
     visibleEmployment,
     visibleLanguages,
-    visibleSkills,
     visibleCerts,
     visibleEducation,
     visibleReferences,
@@ -62,10 +68,100 @@ export function LegacyCvPreview({ model }) {
     updateRoleBullet,
   } = model;
 
-  const skillDisplay = getEffectiveSkillDisplay(
-    { skills: 'tags' },
-    showSkillRatings,
-    visibleSkills,
+  const renderLegacySkillSection = (sectionId) => {
+    const section = findSkillSection(data.skillSections, sectionId);
+    if (!isSkillSectionVisible(data.sections, section)) return null;
+    if (!sectionHasVisibleContent(section)) return null;
+    const visibleCats = getVisibleSkillCategories(section).filter((cat) => parseSkillItems(cat).length > 0);
+    if (visibleCats.length === 0) return null;
+    const display = getEffectiveSkillDisplay({ skills: 'tags' }, showSkillRatings, visibleCats);
+    const showCatTitles = visibleCats.length > 1
+      || visibleCats.some((c) => c.category && !/^\[.*\]$/.test(String(c.category).trim()));
+
+    return (
+      <div className="cv-sidebar-section cv-skills-section">
+        <div className="sidebar-section-title">{section.title || 'Skills'}</div>
+        {visibleCats.map((skillCat) => {
+          const catIndex = (section.categories || []).findIndex((c) => c.id === skillCat.id);
+          const rawItems = parseSkillItems(skillCat);
+          return (
+            <div key={skillCat.id || catIndex} className="sidebar-skills-cat">
+              {showCatTitles && skillCat.category && !/^\[.*\]$/.test(String(skillCat.category).trim()) && (
+                <div className="sidebar-skills-cat-title">
+                  <EditableText
+                    value={skillCat.category}
+                    onChange={(val) => updateSkillCategory(sectionId, catIndex, 'category', val)}
+                    placeholder="Category"
+                  />
+                </div>
+              )}
+              {display === 'dots' ? (
+                <div className="cv-skill-dots-list">
+                  {getSkillEntries(skillCat).map((entry, itemIdx) => {
+                    const dots = formatSkillDots(entry.rating);
+                    if (!dots) {
+                      return (
+                        <div key={itemIdx} className="cv-skill-entry cv-skill-entry--name-only">
+                          <span className="cv-skill-dot-label">
+                            <EditableText
+                              value={entry.name}
+                              onChange={(val) => {
+                                const newItems = [...rawItems];
+                                newItems[itemIdx] = val;
+                                updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
+                              }}
+                              placeholder="Skill"
+                            />
+                          </span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={itemIdx} className="cv-skill-dots-row">
+                        <span className="cv-skill-dot-label">
+                          <EditableText
+                            value={entry.name}
+                            onChange={(val) => {
+                              const newItems = [...rawItems];
+                              newItems[itemIdx] = val;
+                              updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
+                            }}
+                            placeholder="Skill"
+                          />
+                        </span>
+                        <span className="cv-skill-dots" aria-hidden="true">{dots}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="sidebar-skills-tags">
+                  {rawItems.map((item, itemIdx) => (
+                    <span key={itemIdx} className="sidebar-skill-tag">
+                      <EditableText
+                        value={item}
+                        onChange={(val) => {
+                          const newItems = [...rawItems];
+                          newItems[itemIdx] = val;
+                          updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
+                        }}
+                        placeholder="Skill"
+                      />
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const orderedSidebarKeys = resolveSidebarOrder(
+    ['languages', 'coreCompetencies', 'toolsDelivery', 'certifications'],
+    data.sidebarSectionOrder,
+    data.skillSections,
   );
 
   if (isStandaloneProjectList(viewMode)) {
@@ -146,112 +242,47 @@ export function LegacyCvPreview({ model }) {
               <img src={data.personal.photo} alt={data.personal.name} className={getPhotoClassName('sidebar')} />
             </div>
           )}
-          {isSectionVisible(data.sections, 'languages') && visibleLanguages.length > 0 && (
-            <div className="cv-sidebar-section cv-languages-section">
-              <div className="sidebar-section-title">Languages</div>
-              <div className={template.singleColumn ? 'cv-languages-grid' : 'cv-languages-list'}>
-                {visibleLanguages.map((lang, idx) => (
-                  <div key={idx} className="lang-item">
-                    <div className="lang-header">
-                      <span>
-                        <EditableText
-                          value={lang.name}
-                          onChange={(val) => updateLanguageName(idx, val)}
-                          placeholder="Language"
-                        />
-                      </span>
-                      <span className="lang-level-label">{lang.level}</span>
-                    </div>
-                    <div className="lang-bar-bg" aria-hidden="true">
-                      <div className="lang-bar-fill" style={{ width: getLanguagePercentage(lang.level) }} />
+          {orderedSidebarKeys.map((key) => {
+            if (key === 'languages') {
+              return (
+                isSectionVisible(data.sections, 'languages') && visibleLanguages.length > 0 && (
+                  <div key={key} className="cv-sidebar-section cv-languages-section">
+                    <div className="sidebar-section-title">Languages</div>
+                    <div className={template.singleColumn ? 'cv-languages-grid' : 'cv-languages-list'}>
+                      {visibleLanguages.map((lang, idx) => (
+                        <div key={idx} className="lang-item">
+                          <div className="lang-header">
+                            <span>
+                              <EditableText
+                                value={lang.name}
+                                onChange={(val) => updateLanguageName(idx, val)}
+                                placeholder="Language"
+                              />
+                            </span>
+                            <span className="lang-level-label">{lang.level}</span>
+                          </div>
+                          <div className="lang-bar-bg" aria-hidden="true">
+                            <div className="lang-bar-fill" style={{ width: getLanguagePercentage(lang.level) }} />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {isSectionVisible(data.sections, 'skills') && visibleSkills.length > 0 && (
-            <div className="cv-sidebar-section cv-skills-section">
-              <div className="sidebar-section-title">Skills</div>
-              {visibleSkills.map((skillCat, idx) => {
-                const globalIdx = data.skills.findIndex(s => s.id === skillCat.id);
-                const rawItems = parseSkillItems(skillCat);
-                return (
-                  <div key={skillCat.id || idx} className="sidebar-skills-cat">
-                    <div className="sidebar-skills-cat-title">
-                      <EditableText
-                        value={skillCat.category}
-                        onChange={(val) => updateSkillCategory(globalIdx, 'category', val)}
-                        placeholder="Category"
-                      />
-                    </div>
-                    {skillDisplay === 'dots' ? (
-                      <div className="cv-skill-dots-list">
-                        {getSkillEntries(skillCat).map((entry, itemIdx) => {
-                          const dots = formatSkillDots(entry.rating);
-                          if (!dots) {
-                            return (
-                              <div key={itemIdx} className="cv-skill-entry cv-skill-entry--name-only">
-                                <span className="cv-skill-dot-label">
-                                  <EditableText
-                                    value={entry.name}
-                                    onChange={(val) => {
-                                      const newItems = [...rawItems];
-                                      newItems[itemIdx] = val;
-                                      updateSkillCategory(globalIdx, 'itemsText', newItems.join(', '));
-                                    }}
-                                    placeholder="Skill"
-                                  />
-                                </span>
-                              </div>
-                            );
-                          }
-                          return (
-                            <div key={itemIdx} className="cv-skill-dots-row">
-                              <span className="cv-skill-dot-label">
-                                <EditableText
-                                  value={entry.name}
-                                  onChange={(val) => {
-                                    const newItems = [...rawItems];
-                                    newItems[itemIdx] = val;
-                                    updateSkillCategory(globalIdx, 'itemsText', newItems.join(', '));
-                                  }}
-                                  placeholder="Skill"
-                                />
-                              </span>
-                              <span className="cv-skill-dots" aria-hidden="true">{dots}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="sidebar-skills-tags">
-                        {rawItems.map((item, itemIdx) => (
-                          <span key={itemIdx} className="sidebar-skill-tag">
-                            <EditableText
-                              value={item}
-                              onChange={(val) => {
-                                const newItems = [...rawItems];
-                                newItems[itemIdx] = val;
-                                updateSkillCategory(globalIdx, 'itemsText', newItems.join(', '));
-                              }}
-                              placeholder="Skill"
-                            />
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                )
+              );
+            }
+            if (key === 'certifications') {
+              return (
+                isSectionVisible(data.sections, 'certifications') && visibleCerts.length > 0 && (
+                  <div key={key} className="cv-sidebar-section cv-certs-section">
+                    <div className="sidebar-section-title">Certifications</div>
+                    {visibleCerts.map((cert, idx) => renderCertEntry(cert, idx))}
                   </div>
-                );
-              })}
-            </div>
-          )}
-          {isSectionVisible(data.sections, 'certifications') && visibleCerts.length > 0 && (
-            <div className="cv-sidebar-section cv-certs-section">
-              <div className="sidebar-section-title">Certifications</div>
-              {visibleCerts.map((cert, idx) => renderCertEntry(cert, idx))}
-            </div>
-          )}
+                )
+              );
+            }
+            return <React.Fragment key={key}>{renderLegacySkillSection(key)}</React.Fragment>;
+          })}
           {isSectionVisible(data.sections, 'sabbatical') && data.sabbatical?.enabled && (
             <div className="sabbatical-box">
               <strong>Notes:</strong>

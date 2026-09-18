@@ -92,29 +92,49 @@
       ]
     }
   ],
-  "skills": [
+  "skillSections": [
     {
-      "id": "skill_0",
-      "category": "[Core Skills Category]",
-      "items": [
-        "Skill one",
-        "Skill two",
-        "Skill three"
-      ],
-      "itemsText": "Skill one, Skill two, Skill three",
-      "visible": true
+      "id": "coreCompetencies",
+      "title": "Core Competencies",
+      "visible": true,
+      "categories": [
+        {
+          "id": "skill_0",
+          "category": "[Subcategory]",
+          "items": [
+            "Skill one",
+            "Skill two",
+            "Skill three"
+          ],
+          "itemsText": "Skill one, Skill two, Skill three",
+          "visible": true
+        }
+      ]
     },
     {
-      "id": "skill_1",
-      "category": "[Tools & Technologies]",
-      "items": [
-        "Tool A",
-        "Tool B",
-        "Tool C"
-      ],
-      "itemsText": "Tool A, Tool B, Tool C",
-      "visible": true
+      "id": "toolsDelivery",
+      "title": "Tools & Delivery",
+      "visible": true,
+      "categories": [
+        {
+          "id": "skill_1",
+          "category": "[Subcategory]",
+          "items": [
+            "Tool A",
+            "Tool B",
+            "Tool C"
+          ],
+          "itemsText": "Tool A, Tool B, Tool C",
+          "visible": true
+        }
+      ]
     }
+  ],
+  "sidebarSectionOrder": [
+    "languages",
+    "coreCompetencies",
+    "toolsDelivery",
+    "certifications"
   ],
   "languages": [
     {
@@ -184,6 +204,8 @@
     "availability": false,
     "languages": true,
     "skills": true,
+    "coreCompetencies": true,
+    "toolsDelivery": true,
     "certifications": true,
     "sabbatical": false
   }

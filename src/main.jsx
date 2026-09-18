@@ -44,6 +44,13 @@ import {
   visibleBullets,
   visibleItems,
 } from './visibility';
+import {
+  flattenSkillCategories,
+  isSkillSectionVisible,
+  normalizeSidebarSectionOrder,
+  normalizeSkillSections,
+  sidebarSectionLabel,
+} from './sidebarSections.js';
 import { VisibilityToggle } from './VisibilityToggle';
 import {
   hasStructuredRoles,
@@ -113,9 +120,28 @@ const normalizeSummaryStorage = (summary) => {
 };
 
 
-const normalizeResumeData = (raw) => ({
+const normalizeResumeData = (raw) => {
+  const skillSections = normalizeSkillSections(raw).map((sec) => ({
+    ...sec,
+    categories: (sec.categories || []).map((cat) => {
+      const itemsText = cat.itemsText ?? (cat.items || []).join(', ');
+      const items = itemsText.split(',').map((item) => item.trim()).filter(Boolean);
+      return {
+        ...cat,
+        items,
+        itemsText,
+        itemRatings: normalizeSkillItemRatings(items, cat.itemRatings),
+      };
+    }),
+  }));
+
+  return {
   ...raw,
   sections: { ...DEFAULT_SECTION_VISIBILITY, ...(raw.sections || {}) },
+  skillSections,
+  sidebarSectionOrder: normalizeSidebarSectionOrder(raw.sidebarSectionOrder, skillSections),
+  // Keep flat skills for any legacy consumers / export compatibility
+  skills: flattenSkillCategories(skillSections),
   personal: {
     ...raw.personal,
     summary: normalizeSummaryStorage(raw.personal?.summary || ''),
@@ -153,18 +179,6 @@ const normalizeResumeData = (raw) => ({
     level: lang.level || 'Intermediate',
     visible: lang.visible !== false,
   })),
-  skills: (raw.skills || []).map((skill, i) => {
-    const itemsText = skill.itemsText ?? (skill.items || []).join(', ');
-    const items = itemsText.split(',').map((item) => item.trim()).filter(Boolean);
-    return {
-      ...skill,
-      id: skill.id || `skill_${i}`,
-      visible: skill.visible !== false,
-      items,
-      itemsText,
-      itemRatings: normalizeSkillItemRatings(items, skill.itemRatings),
-    };
-  }),
   certifications: (raw.certifications || []).map((cert, i) => ({
     id: cert.id || `cert_${i}_${(cert.name || 'item').replace(/\s+/g, '_').slice(0, 24)}`,
     name: cert.name || '',
@@ -183,7 +197,8 @@ const normalizeResumeData = (raw) => ({
     visible: ref.visible !== false,
   })),
   availability: normalizeAvailability(raw.availability),
-});
+};
+};
 
 
 function App() {
@@ -250,18 +265,22 @@ function App() {
     reorderCertifications,
     reorderEmployment,
     reorderLanguages,
-    reorderSkills,
+    reorderSidebarSections,
     reorderSabbaticalBullets,
     updateLanguageLevel,
     addLanguage,
     removeLanguage,
     updateLanguageName,
+    addSkillSection,
+    removeSkillSection,
+    updateSkillSection,
     addSkillCategory,
     removeSkillCategory,
     updateSkillCategory,
     updateSkillItemsText,
     commitSkillItems,
     updateSkillItemRating,
+    reorderSkillCategories,
     handleSabbaticalBulletChange,
     addSabbaticalBullet,
     removeSabbaticalBullet,
@@ -317,7 +336,7 @@ function App() {
 
   const visibleEmployment = visibleItems(data.employment);
   const visibleLanguages = visibleItems(data.languages);
-  const visibleSkills = visibleItems(data.skills);
+  const visibleSkills = visibleItems(flattenSkillCategories(data.skillSections));
   const visibleCerts = visibleItems(data.certifications);
   const visibleEducation = visibleItems(data.education);
   const visibleReferences = visibleItems(data.references || []);
@@ -478,19 +497,36 @@ function App() {
                     { key: 'references', label: 'References' },
                     { key: 'availability', label: 'Salary & availability' },
                     { key: 'languages', label: 'Languages' },
-                    { key: 'skills', label: 'Skills' },
-                    { key: 'certifications', label: 'Certifications' },
+                    ...((data.skillSections || []).map((sec) => ({
+                      key: sec.id,
+                      label: sec.title || 'Skills section',
+                    }))),
+                    { key: 'certifications', label: 'Certificates' },
                     { key: 'sabbatical', label: 'Notes / sabbatical' },
-                  ].map(({ key, label }) => (
+                  ].map(({ key, label }) => {
+                    const skillSec = (data.skillSections || []).find((s) => s.id === key);
+                    return (
                     <div key={key} className="section-visibility-row">
                       <span>{label}</span>
                       <VisibilityToggle
-                        visible={isSectionVisible(data.sections, key)}
-                        onChange={(v) => setSectionVisibility(key, v)}
+                        visible={
+                          skillSec
+                            ? isSkillSectionVisible(data.sections, skillSec)
+                            : isSectionVisible(data.sections, key)
+                        }
+                        onChange={(v) => {
+                          if (skillSec) {
+                            updateSkillSection(key, 'visible', v);
+                            setSectionVisibility(key, v);
+                          } else {
+                            setSectionVisibility(key, v);
+                          }
+                        }}
                         title={`${label} on CV`}
                       />
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
               {/* Canva-like Fine Tuning panel */}
@@ -956,6 +992,34 @@ function App() {
                 </label>
               </div>
 
+              <div className="section-card">
+                <div className="section-title-bar">
+                  <h2 style={{ marginTop: 0 }}>Sidebar section order</h2>
+                  <button className="btn btn-primary" onClick={addSkillSection}>+ Add Section</button>
+                </div>
+                <p className="sortable-list-hint" style={{ marginTop: 0 }}>
+                  Drag ⋮⋮ to reorder Languages, skill sections, and Certificates on the right column. Use + Add Section for more skill blocks.
+                </p>
+                <div className="sortable-list">
+                  {normalizeSidebarSectionOrder(data.sidebarSectionOrder, data.skillSections).map((key, idx) => (
+                    <div
+                      key={key}
+                      className={sort.itemClassName('sidebarSectionOrder', idx, 'dynamic-item sortable-lang-card')}
+                      {...sort.containerProps('sidebarSectionOrder', idx)}
+                    >
+                      <SortableToolbar
+                        index={idx}
+                        handleProps={sort.handleProps('sidebarSectionOrder', idx, reorderSidebarSections)}
+                      >
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted, #94a3b8)' }}>
+                          {sidebarSectionLabel(key, data.skillSections)}
+                        </span>
+                      </SortableToolbar>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Languages */}
               <div className="section-card">
                 <div className="section-title-bar">
@@ -1009,79 +1073,123 @@ function App() {
                 </div>
               </div>
 
-              {/* Skills Category */}
-              <div className="section-card">
-                <div className="section-title-bar">
-                  <h2>Skills Categories</h2>
-                  <button className="btn btn-primary" onClick={addSkillCategory}>+ Add Category</button>
-                </div>
-                <p className="sortable-list-hint">Drag ⋮⋮ to reorder skill categories</p>
-                <div className="sortable-list">
-                {data.skills.map((skill, idx) => (
-                  <div
-                    key={skill.id || idx}
-                    className={`${sort.itemClassName('skills', idx)}${isVisible(skill) ? '' : ' editor-item--hidden'}`}
-                    {...sort.containerProps('skills', idx)}
-                  >
-                    <SortableToolbar
-                      index={idx}
-                      handleProps={sort.handleProps('skills', idx, reorderSkills)}
-                    >
+              {/* Skill sections + subcategories */}
+              {(data.skillSections || []).map((section) => (
+                <div key={section.id} className="section-card">
+                  <div className="section-title-bar">
+                    <h2>{section.title || 'Skills section'}</h2>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <VisibilityToggle
-                        visible={skill.visible}
-                        onChange={(v) => setData((prev) => ({
-                          ...prev,
-                          skills: prev.skills.map((s, i) => (i === idx ? { ...s, visible: v } : s)),
-                        }))}
+                        visible={isSkillSectionVisible(data.sections, section)}
+                        onChange={(v) => {
+                          updateSkillSection(section.id, 'visible', v);
+                          setSectionVisibility(section.id, v);
+                        }}
+                        title={`${section.title} on CV`}
                       />
-                      <button className="btn btn-danger" style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => removeSkillCategory(idx)}>✕ Delete</button>
-                    </SortableToolbar>
-                    <div className="form-group">
-                      <label>Category Title</label>
-                      <input type="text" value={skill.category} onChange={e => updateSkillCategory(idx, 'category', e.target.value)} />
+                      <button className="btn btn-primary" onClick={() => addSkillCategory(section.id)}>
+                        + Add Subcategory
+                      </button>
+                      {(data.skillSections || []).length > 1 && (
+                        <button
+                          className="btn btn-danger"
+                          style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                          onClick={() => removeSkillSection(section.id)}
+                        >
+                          Delete section
+                        </button>
+                      )}
                     </div>
-                    <div className="form-group">
-                      <label>Skill Tags (Comma-separated)</label>
-                      <input
-                        type="text"
-                        value={skill.itemsText != null ? skill.itemsText : skill.items.join(', ')}
-                        onChange={(e) => updateSkillItemsText(idx, e.target.value)}
-                        onBlur={() => commitSkillItems(idx)}
-                        placeholder="Scrum, PMO, Logistics"
-                      />
-                    </div>
-                    {showSkillRatings && parseSkillItems(skill).length > 0 && (
-                      <div className="form-group skill-ratings-editor">
-                        <label>Skill ratings (1–5, optional per skill)</label>
-                        <p className="sortable-list-hint" style={{ marginTop: 0 }}>
-                          Leave as &quot;No rating&quot; to hide dots for that skill on the CV.
-                        </p>
-                        <ul className="skill-ratings-list">
-                          {getSkillEntries(skill).map((entry, ri) => (
-                            <li key={ri} className="skill-ratings-row">
-                              <span className="skill-ratings-name">{entry.name}</span>
-                              <select
-                                className="skill-ratings-select"
-                                value={entry.rating || 0}
-                                onChange={(e) => updateSkillItemRating(idx, ri, e.target.value)}
-                                aria-label={`Rating for ${entry.name}`}
-                              >
-                                <option value={0}>No rating</option>
-                                <option value={1}>1 / 5</option>
-                                <option value={2}>2 / 5</option>
-                                <option value={3}>3 / 5</option>
-                                <option value={4}>4 / 5</option>
-                                <option value={5}>5 / 5</option>
-                              </select>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
                   </div>
-                ))}
+                  <div className="form-group">
+                    <label>Section Title</label>
+                    <input
+                      type="text"
+                      value={section.title}
+                      onChange={(e) => updateSkillSection(section.id, 'title', e.target.value)}
+                      placeholder="Section title"
+                    />
+                  </div>
+                  <p className="sortable-list-hint">Drag ⋮⋮ to reorder subcategories</p>
+                  <div className="sortable-list">
+                    {(section.categories || []).map((skill, idx) => (
+                      <div
+                        key={skill.id || idx}
+                        className={`${sort.itemClassName(`skillcats_${section.id}`, idx)}${isVisible(skill) ? '' : ' editor-item--hidden'}`}
+                        {...sort.containerProps(`skillcats_${section.id}`, idx)}
+                      >
+                        <SortableToolbar
+                          index={idx}
+                          handleProps={sort.handleProps(
+                            `skillcats_${section.id}`,
+                            idx,
+                            (from, to) => reorderSkillCategories(section.id, from, to),
+                          )}
+                        >
+                          <VisibilityToggle
+                            visible={skill.visible}
+                            onChange={(v) => updateSkillCategory(section.id, idx, 'visible', v)}
+                          />
+                          <button
+                            className="btn btn-danger"
+                            style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+                            onClick={() => removeSkillCategory(section.id, idx)}
+                          >
+                            ✕ Delete
+                          </button>
+                        </SortableToolbar>
+                        <div className="form-group">
+                          <label>Subcategory Title</label>
+                          <input
+                            type="text"
+                            value={skill.category}
+                            onChange={(e) => updateSkillCategory(section.id, idx, 'category', e.target.value)}
+                            placeholder="Subcategory"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Skill Tags (Comma-separated)</label>
+                          <input
+                            type="text"
+                            value={skill.itemsText != null ? skill.itemsText : (skill.items || []).join(', ')}
+                            onChange={(e) => updateSkillItemsText(section.id, idx, e.target.value)}
+                            onBlur={() => commitSkillItems(section.id, idx)}
+                            placeholder="Scrum, PMO, Logistics"
+                          />
+                        </div>
+                        {showSkillRatings && parseSkillItems(skill).length > 0 && (
+                          <div className="form-group skill-ratings-editor">
+                            <label>Skill ratings (1–5, optional per skill)</label>
+                            <p className="sortable-list-hint" style={{ marginTop: 0 }}>
+                              Leave as &quot;No rating&quot; to hide dots for that skill on the CV.
+                            </p>
+                            <ul className="skill-ratings-list">
+                              {getSkillEntries(skill).map((entry, ri) => (
+                                <li key={ri} className="skill-ratings-row">
+                                  <span className="skill-ratings-name">{entry.name}</span>
+                                  <select
+                                    className="skill-ratings-select"
+                                    value={entry.rating || 0}
+                                    onChange={(e) => updateSkillItemRating(section.id, idx, ri, e.target.value)}
+                                    aria-label={`Rating for ${entry.name}`}
+                                  >
+                                    <option value={0}>No rating</option>
+                                    <option value={1}>1 / 5</option>
+                                    <option value={2}>2 / 5</option>
+                                    <option value={3}>3 / 5</option>
+                                    <option value={4}>4 / 5</option>
+                                    <option value={5}>5 / 5</option>
+                                  </select>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           )}
 

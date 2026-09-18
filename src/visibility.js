@@ -18,7 +18,11 @@ export const DEFAULT_SECTION_VISIBILITY = {
   references: true,
   availability: true,
   languages: true,
+  /** @deprecated use skillSections / coreCompetencies + toolsDelivery */
   skills: true,
+  coreCompliance: true,
+  coreCompetencies: true,
+  toolsDelivery: true,
   certifications: true,
   sabbatical: true,
 };
