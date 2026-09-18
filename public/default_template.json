@@ -221,6 +221,7 @@
     "photoFrameStyle": "preset",
     "photoScale": "1.0",
     "showSkillRatings": false,
+    "viewMode": "full-projects",
     "colors": {}
   }
 }

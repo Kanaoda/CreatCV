@@ -112,21 +112,40 @@ export function CvLayoutRenderer({ layout, model }) {
           placeholder="Location/Address"
         />
       </span>
-      {data.personal.links?.map((link, idx) => (
-        <span key={idx}>
-          🔗{' '}
-          <EditableText
-            value={link.label}
-            onChange={(val) => {
-              const updatedLinks = [...data.personal.links];
-              updatedLinks[idx] = { ...updatedLinks[idx], label: val };
-              handlePersonalChange('links', updatedLinks);
-            }}
-            placeholder="Link Label"
-            style={{ fontWeight: 600 }}
-          />
-        </span>
-      ))}
+      {data.personal.links?.map((link, idx) => {
+        const href = normalizeExternalUrl(link.url);
+        if (!href && !(link.label || '').trim()) return null;
+        return (
+          <span key={idx}>
+            🔗{' '}
+            {href ? (
+              <a href={href} target="_blank" rel="noreferrer">
+                <EditableText
+                  value={link.label || link.url}
+                  onChange={(val) => {
+                    const updatedLinks = [...data.personal.links];
+                    updatedLinks[idx] = { ...updatedLinks[idx], label: val };
+                    handlePersonalChange('links', updatedLinks);
+                  }}
+                  placeholder="Link Label"
+                  style={{ fontWeight: 600 }}
+                />
+              </a>
+            ) : (
+              <EditableText
+                value={link.label}
+                onChange={(val) => {
+                  const updatedLinks = [...data.personal.links];
+                  updatedLinks[idx] = { ...updatedLinks[idx], label: val };
+                  handlePersonalChange('links', updatedLinks);
+                }}
+                placeholder="Link Label"
+                style={{ fontWeight: 600 }}
+              />
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 
@@ -156,20 +175,39 @@ export function CvLayoutRenderer({ layout, model }) {
           placeholder="Location/Address"
         />
       </div>
-      {data.personal.links?.map((link, idx) => (
-        <div key={idx}>
-          <EditableText
-            value={link.label}
-            onChange={(val) => {
-              const updatedLinks = [...data.personal.links];
-              updatedLinks[idx] = { ...updatedLinks[idx], label: val };
-              handlePersonalChange('links', updatedLinks);
-            }}
-            placeholder="Link Label"
-            style={{ fontWeight: 600 }}
-          />
-        </div>
-      ))}
+      {data.personal.links?.map((link, idx) => {
+        const href = normalizeExternalUrl(link.url);
+        if (!href && !(link.label || '').trim()) return null;
+        return (
+          <div key={idx}>
+            {href ? (
+              <a href={href} target="_blank" rel="noreferrer">
+                <EditableText
+                  value={link.label || link.url}
+                  onChange={(val) => {
+                    const updatedLinks = [...data.personal.links];
+                    updatedLinks[idx] = { ...updatedLinks[idx], label: val };
+                    handlePersonalChange('links', updatedLinks);
+                  }}
+                  placeholder="Link Label"
+                  style={{ fontWeight: 600 }}
+                />
+              </a>
+            ) : (
+              <EditableText
+                value={link.label}
+                onChange={(val) => {
+                  const updatedLinks = [...data.personal.links];
+                  updatedLinks[idx] = { ...updatedLinks[idx], label: val };
+                  handlePersonalChange('links', updatedLinks);
+                }}
+                placeholder="Link Label"
+                style={{ fontWeight: 600 }}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 

@@ -9,7 +9,7 @@ export function normalizeAppSettings(settings = {}) {
     ...settings,
     templateId,
     preset: templateId,
-    viewMode: settings.viewMode ?? 'detailed',
+    viewMode: settings.viewMode ?? 'full-projects',
   };
 }
 
@@ -39,7 +39,7 @@ export function buildAppSettingsExport({
     photoScale,
     showSkillRatings: Boolean(showSkillRatings),
     colors,
-    viewMode: viewMode ?? 'detailed',
+    viewMode: viewMode ?? 'full-projects',
   };
 }
 

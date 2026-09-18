@@ -34,11 +34,6 @@ import {
   Paragraph, 
   TextRun, 
   HeadingLevel, 
-  Table, 
-  TableRow, 
-  TableCell, 
-  WidthType, 
-  BorderStyle, 
   AlignmentType,
   ExternalHyperlink,
   PageBreak,
@@ -51,73 +46,124 @@ const normalizeExternalUrl = (url) => {
   return `https://${trimmed}`;
 };
 
+/**
+ * ATS-oriented Word export: single-column plain text, no sidebar layout,
+ * no template colors/photo. Employers typically use .docx for parsing —
+ * visual design stays on PDF/print preview.
+ */
+function pushSeparator(parts) {
+  if (parts.length > 0) {
+    parts.push(new TextRun({ text: '  |  ', size: 16 }));
+  }
+}
+
+function buildContactParagraph(personal) {
+  const children = [];
+  const pushPlain = (text) => {
+    const t = (text || '').trim();
+    if (!t) return;
+    pushSeparator(children);
+    children.push(new TextRun({ text: t, size: 16 }));
+  };
+
+  pushPlain(personal.email);
+  pushPlain(personal.phone);
+  pushPlain(personal.address);
+
+  (personal.links || []).forEach((link) => {
+    const href = normalizeExternalUrl(link?.url);
+    if (!href) return;
+    const label = (link.label || 'Link').trim() || 'Link';
+    pushSeparator(children);
+    children.push(new TextRun({ text: `${label}: `, size: 16 }));
+    // Visible URL text helps ATS; hyperlink helps human readers
+    children.push(
+      new ExternalHyperlink({
+        link: href,
+        children: [
+          new TextRun({
+            text: href.replace(/^https?:\/\//i, ''),
+            size: 16,
+            style: 'Hyperlink',
+          }),
+        ],
+      }),
+    );
+  });
+
+  if (children.length === 0) return null;
+  return new Paragraph({
+    alignment: AlignmentType.LEFT,
+    spacing: { after: 240 },
+    children,
+  });
+}
+
+function profileParagraphs(summary) {
+  return String(summary || '')
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 export async function exportToWord(data, viewMode) {
   const children = [];
 
-  // Helper for Section Titles with a nice underline effect
   const addSectionTitle = (text) => {
     children.push(
       new Paragraph({
         text: text.toUpperCase(),
         heading: HeadingLevel.HEADING_2,
         spacing: { before: 240, after: 120 },
-        keepWithNext: true
-      })
+        keepWithNext: true,
+      }),
     );
   };
 
-  // Header Section
+  // Header — single column, left-aligned (ATS-friendly)
   children.push(
     new Paragraph({
-      alignment: AlignmentType.CENTER,
+      alignment: AlignmentType.LEFT,
       children: [
         new TextRun({
-          text: data.personal.name,
+          text: data.personal.name || '',
           bold: true,
           size: 32,
-        })
-      ]
-    })
+        }),
+      ],
+    }),
   );
 
-  children.push(
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 120 },
-      children: [
-        new TextRun({
-          text: data.personal.title,
-          italics: true,
-          size: 18,
-        })
-      ]
-    })
-  );
+  if ((data.personal.title || '').trim()) {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.LEFT,
+        spacing: { after: 80 },
+        children: [
+          new TextRun({
+            text: data.personal.title,
+            size: 20,
+          }),
+        ],
+      }),
+    );
+  }
 
-  // Contact Info
-  const contactText = `${data.personal.email} | ${data.personal.phone} | ${data.personal.address}`;
-  children.push(
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 240 },
-      children: [
-        new TextRun({
-          text: contactText,
-          size: 16,
-        })
-      ]
-    })
-  );
+  const contactPara = buildContactParagraph(data.personal || {});
+  if (contactPara) children.push(contactPara);
 
   // Summary/Profile
   if (isSectionVisible(data.sections, 'profile') && data.personal.summary) {
-    addSectionTitle("Professional Profile");
-    children.push(
-      new Paragraph({
-        text: data.personal.summary,
-        spacing: { after: 180 },
-      })
-    );
+    addSectionTitle('Professional Profile');
+    profileParagraphs(data.personal.summary).forEach((line) => {
+      children.push(
+        new Paragraph({
+          text: line,
+          bullet: { level: 0 },
+          spacing: { after: 60 },
+        }),
+      );
+    });
   }
 
   // Handle View Modes
@@ -167,32 +213,27 @@ export async function exportToWord(data, viewMode) {
     });
 
   } else {
-    // DETAILED CV or CONCISE RESUME
+    // DETAILED CV or CONCISE RESUME — single-column body
     // Employment History
     if (isSectionVisible(data.sections, 'employment') && visibleItems(data.employment).length > 0) {
     addSectionTitle("Employment History");
 
     visibleItems(data.employment).forEach(emp => {
       if (usesMultiRoleDisplay(emp)) {
+        const companyBits = [
+          new TextRun({ text: emp.company, bold: true, size: 22 }),
+        ];
+        if (emp.location) {
+          companyBits.push(new TextRun({ text: ` — ${emp.location}`, size: 20 }));
+        }
+        if (emp.period) {
+          companyBits.push(new TextRun({ text: ` (${emp.period})`, size: 20 }));
+        }
         children.push(
           new Paragraph({
             spacing: { before: 180, after: 40 },
             keepWithNext: true,
-            children: [
-              new TextRun({
-                text: emp.company,
-                bold: true,
-                size: 22,
-                ...((emp.jobTitleColor || emp.companyColor)
-                  ? { color: (emp.jobTitleColor || emp.companyColor).replace(/^#/, '').toUpperCase() }
-                  : {}),
-              }),
-              new TextRun({
-                text: ` (${emp.period})`,
-                bold: true,
-                size: 20,
-              }),
-            ],
+            children: companyBits,
           }),
         );
       } else {
@@ -210,13 +251,9 @@ export async function exportToWord(data, viewMode) {
                 text: ` at ${emp.company}`,
                 bold: true,
                 size: 22,
-                ...((emp.jobTitleColor || emp.companyColor)
-                  ? { color: (emp.jobTitleColor || emp.companyColor).replace(/^#/, '').toUpperCase() }
-                  : {}),
               }),
               new TextRun({
                 text: ` (${emp.period})`,
-                bold: true,
                 size: 20
               })
             ]
@@ -255,21 +292,21 @@ export async function exportToWord(data, viewMode) {
             );
           });
         });
-      }
-
-      // Bullets (only if not Concise Resume or if concise is allowed some summary)
-      const empBullets = visibleBullets(emp.bullets);
-      if (isConciseView(viewMode) || empBullets.length > 0) {
-        const bulletsToShow = isConciseView(viewMode) ? empBullets.slice(0, 3) : empBullets;
-        bulletsToShow.forEach(bullet => {
-          children.push(
-            new Paragraph({
-              text: bulletText(bullet),
-              bullet: { level: 0 },
-              spacing: { after: 60 }
-            })
-          );
-        });
+      } else {
+        // Job-level bullets only when not using per-role display
+        const empBullets = visibleBullets(emp.bullets);
+        if (empBullets.length > 0) {
+          const bulletsToShow = isConciseView(viewMode) ? empBullets.slice(0, 3) : empBullets;
+          bulletsToShow.forEach(bullet => {
+            children.push(
+              new Paragraph({
+                text: bulletText(bullet),
+                bullet: { level: 0 },
+                spacing: { after: 60 }
+              })
+            );
+          });
+        }
       }
 
       // Projects (only in Detailed CV)
@@ -329,46 +366,7 @@ export async function exportToWord(data, viewMode) {
     });
     }
 
-    if (isSectionVisible(data.sections, 'references') && visibleItems(data.references || []).length > 0) {
-      addSectionTitle('References');
-      visibleItems(data.references).forEach((ref) => {
-        const meta = [ref.company, ref.phone, ref.email].filter(Boolean).join(' · ');
-        children.push(
-          new Paragraph({
-            spacing: { before: 120, after: 40 },
-            children: [
-              new TextRun({ text: ref.name, bold: true }),
-              ...(ref.title ? [new TextRun({ text: ` — ${ref.title}` })] : []),
-            ],
-          }),
-        );
-        if (meta) {
-          children.push(
-            new Paragraph({
-              text: meta,
-              spacing: { after: 60 },
-            }),
-          );
-        }
-      });
-    }
-
-    const avail = data.availability;
-    if (isSectionVisible(data.sections, 'availability') && avail && hasAnyShownAvailabilityField(avail)) {
-      addSectionTitle('Availability');
-      const shownFields = AVAILABILITY_FIELD_DEFS.filter((f) => isAvailabilityFieldShown(avail, f.key));
-      shownFields.forEach((field, idx) => {
-        children.push(
-          new Paragraph({
-            text: `${field.previewLabel}: ${avail[field.key]}`,
-            bullet: { level: 0 },
-            spacing: { after: idx === shownFields.length - 1 ? 60 : 40 },
-          }),
-        );
-      });
-    }
-
-    // Certifications / Skills / Languages — follow sidebar section order
+    // Skills / Languages / Certs — follow user sidebar order, but as single-column sections
     const appendCertifications = () => {
       if (!isSectionVisible(data.sections, 'certifications') || visibleItems(data.certifications).length === 0) {
         return;
@@ -463,6 +461,45 @@ export async function exportToWord(data, viewMode) {
         if (fn) fn();
       });
 
+    if (isSectionVisible(data.sections, 'references') && visibleItems(data.references || []).length > 0) {
+      addSectionTitle('References');
+      visibleItems(data.references).forEach((ref) => {
+        const meta = [ref.company, ref.phone, ref.email].filter(Boolean).join(' · ');
+        children.push(
+          new Paragraph({
+            spacing: { before: 120, after: 40 },
+            children: [
+              new TextRun({ text: ref.name, bold: true }),
+              ...(ref.title ? [new TextRun({ text: ` — ${ref.title}` })] : []),
+            ],
+          }),
+        );
+        if (meta) {
+          children.push(
+            new Paragraph({
+              text: meta,
+              spacing: { after: 60 },
+            }),
+          );
+        }
+      });
+    }
+
+    const avail = data.availability;
+    if (isSectionVisible(data.sections, 'availability') && avail && hasAnyShownAvailabilityField(avail)) {
+      addSectionTitle('Availability');
+      const shownFields = AVAILABILITY_FIELD_DEFS.filter((f) => isAvailabilityFieldShown(avail, f.key));
+      shownFields.forEach((field, idx) => {
+        children.push(
+          new Paragraph({
+            text: `${field.previewLabel}: ${avail[field.key]}`,
+            bullet: { level: 0 },
+            spacing: { after: idx === shownFields.length - 1 ? 60 : 40 },
+          }),
+        );
+      });
+    }
+
     // Sabbatical
     if (isSectionVisible(data.sections, 'sabbatical') && data.sabbatical && data.sabbatical.enabled) {
       addSectionTitle("Additional Notes");
@@ -524,17 +561,18 @@ export async function exportToWord(data, viewMode) {
     }
   }
 
-  // Create document
   const doc = new Document({
+    creator: 'CreatCV',
+    title: `${data.personal?.name || 'CV'} — ATS Word`,
+    description: 'Single-column ATS-oriented resume export from CreatCV',
     sections: [
       {
         properties: {},
-        children: children
-      }
-    ]
+        children,
+      },
+    ],
   });
 
-  // Pack document
   const blob = await Packer.toBlob(doc);
   return blob;
 }
