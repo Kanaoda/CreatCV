@@ -29,6 +29,11 @@ import { exportCvToPdf } from './printCv';
 import {
   normalizeAvailability,
 } from './availabilityFields.js';
+import {
+  createEmptySkillCategory,
+  createEmptySkillSection,
+  normalizeSidebarSectionOrder,
+} from './sidebarSections.js';
 
 // Helper formatters
 const formatTypoPercent = (ratio) => `${Math.round(ratio * 100)}%`;
@@ -533,7 +538,17 @@ export function useResumeState(normalizeResumeData) {
   const reorderCertifications  = (f, t) => reorderSection('certifications', f, t);
   const reorderEmployment      = (f, t) => reorderSection('employment',     f, t);
   const reorderLanguages       = (f, t) => reorderSection('languages',      f, t);
-  const reorderSkills          = (f, t) => reorderSection('skills',         f, t);
+
+  const reorderSidebarSections = (fromIndex, toIndex) => {
+    setData((prev) => ({
+      ...prev,
+      sidebarSectionOrder: reorderArray(
+        normalizeSidebarSectionOrder(prev.sidebarSectionOrder, prev.skillSections),
+        fromIndex,
+        toIndex,
+      ),
+    }));
+  };
 
   const reorderSabbaticalBullets = (fromIndex, toIndex) =>
     setData(prev => ({
@@ -570,63 +585,143 @@ export function useResumeState(normalizeResumeData) {
     }));
   };
 
-  // Skills
-  const addSkillCategory = () => {
-    setData(prev => ({
+  // Skill sections (Core Competencies, Tools & Delivery, custom…) + subcategories
+  const addSkillSection = () => {
+    setData((prev) => {
+      const section = createEmptySkillSection('New Section');
+      const skillSections = [...(prev.skillSections || []), section];
+      const order = normalizeSidebarSectionOrder(prev.sidebarSectionOrder, skillSections);
+      const certIdx = order.indexOf('certifications');
+      const nextOrder = certIdx >= 0
+        ? [...order.slice(0, certIdx), section.id, ...order.slice(certIdx)].filter(
+          (k, i, arr) => arr.indexOf(k) === i,
+        )
+        : [...order, section.id];
+      return {
+        ...prev,
+        skillSections,
+        sidebarSectionOrder: nextOrder,
+        sections: { ...prev.sections, [section.id]: true },
+      };
+    });
+  };
+
+  const removeSkillSection = (sectionId) => {
+    setData((prev) => {
+      const skillSections = (prev.skillSections || []).filter((s) => s.id !== sectionId);
+      if (skillSections.length === 0) return prev;
+      return {
+        ...prev,
+        skillSections,
+        sidebarSectionOrder: normalizeSidebarSectionOrder(prev.sidebarSectionOrder, skillSections),
+      };
+    });
+  };
+
+  const updateSkillSection = (sectionId, field, value) => {
+    setData((prev) => ({
       ...prev,
-      skills: [...prev.skills, { id: `skill_${Date.now()}`, category: 'Category', items: [], itemsText: '', itemRatings: [], visible: true }],
+      skillSections: (prev.skillSections || []).map((s) =>
+        s.id === sectionId ? { ...s, [field]: value } : s,
+      ),
     }));
   };
 
-  const removeSkillCategory = (index) => {
-    setData(prev => ({
+  const addSkillCategory = (sectionId) => {
+    setData((prev) => ({
       ...prev,
-      skills: prev.skills.filter((_, i) => i !== index)
+      skillSections: (prev.skillSections || []).map((s) =>
+        s.id === sectionId
+          ? { ...s, categories: [...(s.categories || []), createEmptySkillCategory()] }
+          : s,
+      ),
     }));
   };
 
-  const updateSkillCategory = (index, field, value) => {
-    setData(prev => ({
+  const removeSkillCategory = (sectionId, catIndex) => {
+    setData((prev) => ({
       ...prev,
-      skills: prev.skills.map((s, i) => i === index ? { ...s, [field]: value } : s)
-    }));
-  };
-
-  const updateSkillItemsText = (index, value) => {
-    setData(prev => ({
-      ...prev,
-      skills: prev.skills.map((s, i) => (i === index ? { ...s, itemsText: value } : s)),
-    }));
-  };
-
-  const commitSkillItems = (index) => {
-    setData(prev => ({
-      ...prev,
-      skills: prev.skills.map((s, i) => {
-        if (i !== index) return s;
-        const text = s.itemsText != null ? s.itemsText : (s.items || []).join(', ');
-        const items = text.split(',').map((item) => item.trim()).filter(Boolean);
+      skillSections: (prev.skillSections || []).map((s) => {
+        if (s.id !== sectionId) return s;
+        const categories = (s.categories || []).filter((_, i) => i !== catIndex);
         return {
           ...s,
-          itemsText: text,
-          items,
-          itemRatings: normalizeSkillItemRatings(items, s.itemRatings),
+          categories: categories.length > 0 ? categories : [createEmptySkillCategory()],
         };
       }),
     }));
   };
 
-  const updateSkillItemRating = (categoryIndex, itemIndex, value) => {
+  const updateSkillCategory = (sectionId, catIndex, field, value) => {
+    setData((prev) => ({
+      ...prev,
+      skillSections: (prev.skillSections || []).map((s) => {
+        if (s.id !== sectionId) return s;
+        return {
+          ...s,
+          categories: (s.categories || []).map((c, i) =>
+            i === catIndex ? { ...c, [field]: value } : c,
+          ),
+        };
+      }),
+    }));
+  };
+
+  const updateSkillItemsText = (sectionId, catIndex, value) => {
+    updateSkillCategory(sectionId, catIndex, 'itemsText', value);
+  };
+
+  const commitSkillItems = (sectionId, catIndex) => {
+    setData((prev) => ({
+      ...prev,
+      skillSections: (prev.skillSections || []).map((s) => {
+        if (s.id !== sectionId) return s;
+        return {
+          ...s,
+          categories: (s.categories || []).map((c, i) => {
+            if (i !== catIndex) return c;
+            const text = c.itemsText != null ? c.itemsText : (c.items || []).join(', ');
+            const items = text.split(',').map((item) => item.trim()).filter(Boolean);
+            return {
+              ...c,
+              itemsText: text,
+              items,
+              itemRatings: normalizeSkillItemRatings(items, c.itemRatings),
+            };
+          }),
+        };
+      }),
+    }));
+  };
+
+  const updateSkillItemRating = (sectionId, catIndex, itemIndex, value) => {
     const rating = Number(value);
     setData((prev) => ({
       ...prev,
-      skills: prev.skills.map((s, i) => {
-        if (i !== categoryIndex) return s;
-        const items = parseSkillItems(s);
-        const itemRatings = normalizeSkillItemRatings(items, s.itemRatings);
-        itemRatings[itemIndex] = rating >= 1 && rating <= 5 ? rating : 0;
-        return { ...s, itemRatings };
+      skillSections: (prev.skillSections || []).map((s) => {
+        if (s.id !== sectionId) return s;
+        return {
+          ...s,
+          categories: (s.categories || []).map((c, i) => {
+            if (i !== catIndex) return c;
+            const items = parseSkillItems(c);
+            const itemRatings = normalizeSkillItemRatings(items, c.itemRatings);
+            itemRatings[itemIndex] = rating >= 1 && rating <= 5 ? rating : 0;
+            return { ...c, itemRatings };
+          }),
+        };
       }),
+    }));
+  };
+
+  const reorderSkillCategories = (sectionId, fromIndex, toIndex) => {
+    setData((prev) => ({
+      ...prev,
+      skillSections: (prev.skillSections || []).map((s) =>
+        s.id === sectionId
+          ? { ...s, categories: reorderArray(s.categories || [], fromIndex, toIndex) }
+          : s,
+      ),
     }));
   };
 
@@ -843,18 +938,22 @@ export function useResumeState(normalizeResumeData) {
     reorderCertifications,
     reorderEmployment,
     reorderLanguages,
-    reorderSkills,
+    reorderSidebarSections,
     reorderSabbaticalBullets,
     updateLanguageLevel,
     addLanguage,
     removeLanguage,
     updateLanguageName,
+    addSkillSection,
+    removeSkillSection,
+    updateSkillSection,
     addSkillCategory,
     removeSkillCategory,
     updateSkillCategory,
     updateSkillItemsText,
     commitSkillItems,
     updateSkillItemRating,
+    reorderSkillCategories,
     handleSabbaticalBulletChange,
     addSabbaticalBullet,
     removeSabbaticalBullet,

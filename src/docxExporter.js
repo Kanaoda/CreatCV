@@ -10,6 +10,14 @@ import {
   visibleItems,
 } from './visibility';
 import {
+  findSkillSection,
+  getVisibleSkillCategories,
+  isSkillSectionVisible,
+  normalizeSidebarSectionOrder,
+  sectionHasVisibleContent,
+} from './sidebarSections.js';
+import { parseSkillItems } from './cvPreview/helpers.js';
+import {
   isConciseView,
   isStandaloneProjectList,
   showsInlineProjects,
@@ -360,78 +368,100 @@ export async function exportToWord(data, viewMode) {
       });
     }
 
-    // Certifications
-    if (isSectionVisible(data.sections, 'certifications') && visibleItems(data.certifications).length > 0) {
-    addSectionTitle("Certificates & Licenses");
-    visibleItems(data.certifications).forEach(cert => {
-      const certUrl = normalizeExternalUrl(cert.url);
-      const metaRun = new TextRun({
-        text: ` (${cert.issuer}, ${cert.date})`,
+    // Certifications / Skills / Languages — follow sidebar section order
+    const appendCertifications = () => {
+      if (!isSectionVisible(data.sections, 'certifications') || visibleItems(data.certifications).length === 0) {
+        return;
+      }
+      addSectionTitle('Certificates & Licenses');
+      visibleItems(data.certifications).forEach((cert) => {
+        const certUrl = normalizeExternalUrl(cert.url);
+        const metaRun = new TextRun({
+          text: ` (${cert.issuer}, ${cert.date})`,
+        });
+        const nameChildren = certUrl
+          ? [
+              new ExternalHyperlink({
+                link: certUrl,
+                children: [
+                  new TextRun({
+                    text: cert.name,
+                    bold: true,
+                    style: 'Hyperlink',
+                  }),
+                ],
+              }),
+              metaRun,
+            ]
+          : [
+              new TextRun({
+                text: cert.name,
+                bold: true,
+              }),
+              metaRun,
+            ];
+
+        children.push(
+          new Paragraph({
+            spacing: { after: 60 },
+            children: nameChildren,
+          }),
+        );
       });
-      const nameChildren = certUrl
-        ? [
-            new ExternalHyperlink({
-              link: certUrl,
-              children: [
-                new TextRun({
-                  text: cert.name,
-                  bold: true,
-                  style: 'Hyperlink',
-                }),
-              ],
-            }),
-            metaRun,
-          ]
-        : [
-            new TextRun({
-              text: cert.name,
-              bold: true,
-            }),
-            metaRun,
-          ];
+    };
 
+    const appendSkillSection = (sectionId) => {
+      const section = findSkillSection(data.skillSections, sectionId);
+      if (!isSkillSectionVisible(data.sections, section)) return;
+      if (!sectionHasVisibleContent(section)) return;
+      const cats = getVisibleSkillCategories(section).filter((c) => parseSkillItems(c).length > 0);
+      if (cats.length === 0) return;
+      addSectionTitle(section.title || 'Skills');
+      cats.forEach((skillCat) => {
+        const items = parseSkillItems(skillCat);
+        const label = skillCat.category && !/^\[.*\]$/.test(String(skillCat.category).trim())
+          ? `${skillCat.category}: `
+          : '';
+        children.push(
+          new Paragraph({
+            children: [
+              ...(label
+                ? [new TextRun({ text: label, bold: true })]
+                : []),
+              new TextRun({ text: items.join(', ') }),
+            ],
+            spacing: { after: 60 },
+          }),
+        );
+      });
+    };
+
+    const appendLanguages = () => {
+      const visibleLangs = visibleItems(data.languages);
+      if (!isSectionVisible(data.sections, 'languages') || visibleLangs.length === 0) return;
+      addSectionTitle('Languages');
+      const langText = visibleLangs.map((l) => `${l.name} (${l.level})`).join(', ');
       children.push(
         new Paragraph({
-          spacing: { after: 60 },
-          children: nameChildren,
-        })
+          text: langText,
+          spacing: { after: 120 },
+        }),
       );
-    });
-    }
+    };
 
-    // Skills
-    if (isSectionVisible(data.sections, 'skills') && visibleItems(data.skills).length > 0) {
-    addSectionTitle("Skills");
-    visibleItems(data.skills).forEach(skillCat => {
-      children.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: `${skillCat.category}: `,
-              bold: true
-            }),
-            new TextRun({
-              text: skillCat.items.join(", ")
-            })
-          ],
-          spacing: { after: 60 }
-        })
-      );
+    const sidebarExportBlocks = {
+      languages: appendLanguages,
+      certifications: appendCertifications,
+    };
+    (data.skillSections || []).forEach((sec) => {
+      sidebarExportBlocks[sec.id] = () => appendSkillSection(sec.id);
     });
-    }
 
-    // Languages
-    const visibleLangs = visibleItems(data.languages);
-    if (isSectionVisible(data.sections, 'languages') && visibleLangs.length > 0) {
-    addSectionTitle("Languages");
-    const langText = visibleLangs.map(l => `${l.name} (${l.level})`).join(", ");
-    children.push(
-      new Paragraph({
-        text: langText,
-        spacing: { after: 120 }
-      })
-    );
-    }
+    normalizeSidebarSectionOrder(data.sidebarSectionOrder, data.skillSections)
+      .forEach((key) => {
+        const fn = sidebarExportBlocks[key];
+        if (fn) fn();
+      });
 
     // Sabbatical
     if (isSectionVisible(data.sections, 'sabbatical') && data.sabbatical && data.sabbatical.enabled) {

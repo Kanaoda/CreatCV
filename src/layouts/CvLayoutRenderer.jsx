@@ -25,6 +25,14 @@ import { usesMultiRoleDisplay } from '../employmentRoles';
 import { SectionHead } from './SectionHead.jsx';
 import { getEffectiveSkillDisplay } from './skillDisplay.js';
 import { AVAILABILITY_FIELD_DEFS, isAvailabilityFieldShown } from '../availabilityFields.js';
+import {
+  findSkillSection,
+  getVisibleSkillCategories,
+  isSkillSectionVisible,
+  resolveMainOrder,
+  resolveSidebarOrder,
+  sectionHasVisibleContent,
+} from '../sidebarSections.js';
 
 export function CvLayoutRenderer({ layout, model }) {
   const {
@@ -56,8 +64,6 @@ export function CvLayoutRenderer({ layout, model }) {
     updateEmpRole,
     updateRoleBullet,
   } = model;
-
-  const skillDisplay = getEffectiveSkillDisplay(layout, showSkillRatings, visibleSkills);
 
   const titleMain = layout.sectionTitleMain || 'plain';
   const titleSide = layout.sectionTitleSidebar || 'caps';
@@ -410,31 +416,49 @@ export function CvLayoutRenderer({ layout, model }) {
     );
   };
 
-  const renderSkillsBlock = (zone) => {
-    if (!isSectionVisible(data.sections, 'skills') || visibleSkills.length === 0) return null;
+  const renderSkillsBlock = (zone, sectionId) => {
+    const section = findSkillSection(data.skillSections, sectionId);
+    if (!isSkillSectionVisible(data.sections, section)) return null;
+    if (!sectionHasVisibleContent(section)) return null;
+
     const isSide = zone === 'sidebar';
     const isMain = zone === 'main';
     if (layout.skillsInMain && !isMain) return null;
     if (!layout.skillsInMain && !isSide) return null;
 
-    const getCategoryIndex = (id) => data.skills.findIndex(s => s.id === id);
+    const visibleCats = getVisibleSkillCategories(section).filter((cat) => {
+      const raw = parseSkillItems(cat);
+      return raw.length > 0;
+    });
+    if (visibleCats.length === 0) return null;
+
+    const display = getEffectiveSkillDisplay(layout, showSkillRatings, visibleCats);
+    const title = section.title || 'Skills';
+    const showCatTitles = visibleCats.length > 1
+      || visibleCats.some((c) => c.category && !/^\[.*\]$/.test(String(c.category).trim()));
 
     return (
-      <div className={`cv-section cv-skills-section ${isSide ? 'cv-sidebar-section' : 'cv-skills-main-section'}`}>
-        <SectionHead title="Skills" style={isSide ? titleSide : titleMain} zone={isSide ? 'sidebar' : 'main'} />
-        {visibleSkills.map((skillCat, idx) => {
-          const globalIdx = getCategoryIndex(skillCat.id);
+      <div className={`cv-section cv-skills-section cv-skills-section--${sectionId} ${isSide ? 'cv-sidebar-section' : 'cv-skills-main-section'}`}>
+        <SectionHead
+          title={title}
+          style={isSide ? titleSide : titleMain}
+          zone={isSide ? 'sidebar' : 'main'}
+        />
+        {visibleCats.map((skillCat) => {
+          const catIndex = (section.categories || []).findIndex((c) => c.id === skillCat.id);
           const rawItems = parseSkillItems(skillCat);
           return (
-            <div key={skillCat.id || idx} className="sidebar-skills-cat">
-              <div className="sidebar-skills-cat-title">
-                <EditableText
-                  value={skillCat.category}
-                  onChange={(val) => updateSkillCategory(globalIdx, 'category', val)}
-                  placeholder="Skill Category"
-                />
-              </div>
-              {skillDisplay === 'dots' ? (
+            <div key={skillCat.id || catIndex} className="sidebar-skills-cat">
+              {showCatTitles && skillCat.category && !/^\[.*\]$/.test(String(skillCat.category).trim()) && (
+                <div className="sidebar-skills-cat-title">
+                  <EditableText
+                    value={skillCat.category}
+                    onChange={(val) => updateSkillCategory(sectionId, catIndex, 'category', val)}
+                    placeholder="Subcategory"
+                  />
+                </div>
+              )}
+              {display === 'dots' ? (
                 <div className="cv-skill-dots-list">
                   {getSkillEntries(skillCat).map((entry, itemIdx) => {
                     const dots = formatSkillDots(entry.rating);
@@ -447,7 +471,7 @@ export function CvLayoutRenderer({ layout, model }) {
                               onChange={(val) => {
                                 const newItems = [...rawItems];
                                 newItems[itemIdx] = val;
-                                updateSkillCategory(globalIdx, 'itemsText', newItems.join(', '));
+                                updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
                               }}
                               placeholder="Skill"
                             />
@@ -463,7 +487,7 @@ export function CvLayoutRenderer({ layout, model }) {
                             onChange={(val) => {
                               const newItems = [...rawItems];
                               newItems[itemIdx] = val;
-                              updateSkillCategory(globalIdx, 'itemsText', newItems.join(', '));
+                              updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
                             }}
                             placeholder="Skill"
                           />
@@ -473,13 +497,13 @@ export function CvLayoutRenderer({ layout, model }) {
                     );
                   })}
                 </div>
-              ) : skillDisplay === 'list' ? (
+              ) : display === 'list' ? (
                 <div className="cv-skills-list-line">
                   <EditableText
                     value={rawItems.join(' · ')}
                     onChange={(val) => {
-                      const items = val.split(/[·,]/).map(x => x.trim()).filter(Boolean);
-                      updateSkillCategory(globalIdx, 'itemsText', items.join(', '));
+                      const items = val.split(/[·,]/).map((x) => x.trim()).filter(Boolean);
+                      updateSkillCategory(sectionId, catIndex, 'itemsText', items.join(', '));
                     }}
                     placeholder="Skill 1 · Skill 2 · Skill 3"
                   />
@@ -493,7 +517,7 @@ export function CvLayoutRenderer({ layout, model }) {
                         onChange={(val) => {
                           const newItems = [...rawItems];
                           newItems[itemIdx] = val;
-                          updateSkillCategory(globalIdx, 'itemsText', newItems.join(', '));
+                          updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
                         }}
                         placeholder="Skill"
                       />
@@ -842,11 +866,26 @@ export function CvLayoutRenderer({ layout, model }) {
     )
   );
 
+  const skillSectionIds = (data.skillSections || []).map((s) => s.id);
+  const skillMainBlocks = Object.fromEntries(
+    skillSectionIds.map((id) => [id, () => renderSkillsBlock('main', id)]),
+  );
+  const skillSidebarBlocks = Object.fromEntries(
+    skillSectionIds.map((id) => [id, () => renderSkillsBlock('sidebar', id)]),
+  );
+
   const mainBlocks = {
     profile: renderProfile,
     employment: renderEmployment,
     education: renderEducation,
-    skills: () => renderSkillsBlock('main'),
+    skills: () => (
+      <>
+        {skillSectionIds.map((id) => (
+          <React.Fragment key={id}>{renderSkillsBlock('main', id)}</React.Fragment>
+        ))}
+      </>
+    ),
+    ...skillMainBlocks,
     languages: () => renderLanguages('main'),
     references: () => renderReferences('main'),
     availability: renderAvailability,
@@ -854,7 +893,7 @@ export function CvLayoutRenderer({ layout, model }) {
 
   const renderMainCol = () => (
     <div className="cv-main-col">
-      {(layout.mainOrder || []).map((key) => {
+      {resolveMainOrder(layout.mainOrder || [], data.skillSections).map((key) => {
         const fn = mainBlocks[key];
         return fn ? <React.Fragment key={key}>{fn()}</React.Fragment> : null;
       })}
@@ -879,7 +918,14 @@ export function CvLayoutRenderer({ layout, model }) {
       </div>
     ),
     languages: () => renderLanguages('sidebar'),
-    skills: () => renderSkillsBlock('sidebar'),
+    skills: () => (
+      <>
+        {skillSectionIds.map((id) => (
+          <React.Fragment key={id}>{renderSkillsBlock('sidebar', id)}</React.Fragment>
+        ))}
+      </>
+    ),
+    ...skillSidebarBlocks,
     certifications: () => (
       isSectionVisible(data.sections, 'certifications') && visibleCerts.length > 0 && (
         <div className="cv-sidebar-section cv-certs-section">
@@ -913,7 +959,7 @@ export function CvLayoutRenderer({ layout, model }) {
 
   const renderSidebarCol = () => (
     <div className="cv-sidebar-col">
-      {(layout.sidebarOrder || []).map((key) => {
+      {resolveSidebarOrder(layout.sidebarOrder || [], data.sidebarSectionOrder, data.skillSections).map((key) => {
         const fn = sidebarBlocks[key];
         return fn ? <React.Fragment key={key}>{fn()}</React.Fragment> : null;
       })}
@@ -925,7 +971,7 @@ export function CvLayoutRenderer({ layout, model }) {
       return (
         <div className="cv-body cv-body--layout-single">
           <div className="cv-main-col cv-main-col--full">
-            {(layout.mainOrder || []).map((key) => {
+            {(resolveMainOrder(layout.mainOrder || [], data.skillSections)).map((key) => {
               const sideFn = sidebarBlocks[key];
               const mainFn = mainBlocks[key];
               if (sideFn) return <React.Fragment key={key}>{sideFn()}</React.Fragment>;
@@ -942,7 +988,9 @@ export function CvLayoutRenderer({ layout, model }) {
           <div className="cv-col cv-col--left">
             {renderLanguages('sidebar')}
             {renderEducation()}
-            {renderSkillsBlock('sidebar')}
+            {skillSectionIds.map((id) => (
+              <React.Fragment key={id}>{renderSkillsBlock('sidebar', id)}</React.Fragment>
+            ))}
             {renderReferences('main')}
           </div>
           <div className="cv-col cv-col--right">

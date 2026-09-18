@@ -12,7 +12,7 @@ export const LAYOUT_DEFINITIONS = [
     sectionTitleMain: 'bar',
     sectionTitleSidebar: 'caps',
     skills: 'tags',
-    sidebarOrder: ['photo', 'languages', 'skills', 'certifications', 'sabbatical'],
+    sidebarOrder: ['photo', 'languages', 'coreCompetencies', 'toolsDelivery', 'certifications', 'sabbatical'],
     mainOrder: ['profile', 'employment', 'education', 'references', 'availability'],
   },
   {
@@ -28,7 +28,7 @@ export const LAYOUT_DEFINITIONS = [
     sectionTitleSidebar: 'caps',
     skills: 'tags',
     contactInSidebar: true,
-    sidebarOrder: ['photo', 'contact', 'languages', 'skills', 'certifications', 'references', 'sabbatical'],
+    sidebarOrder: ['photo', 'contact', 'languages', 'coreCompetencies', 'toolsDelivery', 'certifications', 'references', 'sabbatical'],
     mainOrder: ['profile', 'employment', 'education', 'availability'],
   },
   {
@@ -43,7 +43,7 @@ export const LAYOUT_DEFINITIONS = [
     sectionTitleMain: 'pill',
     sectionTitleSidebar: 'caps',
     skills: 'tags',
-    sidebarOrder: ['languages', 'skills', 'certifications'],
+    sidebarOrder: ['languages', 'coreCompetencies', 'toolsDelivery', 'certifications'],
     mainOrder: ['profile', 'employment', 'education', 'references', 'availability'],
   },
   {
@@ -58,7 +58,7 @@ export const LAYOUT_DEFINITIONS = [
     sectionTitleMain: 'italic',
     skills: 'list',
     langDisplay: 'text',
-    mainOrder: ['profile', 'employment', 'education', 'skills', 'languages', 'references', 'availability'],
+    mainOrder: ['profile', 'employment', 'education', 'coreCompetencies', 'toolsDelivery', 'languages', 'references', 'availability'],
   },
   {
     id: 'timeline-editorial',
@@ -73,7 +73,7 @@ export const LAYOUT_DEFINITIONS = [
     sectionTitleSidebar: 'caps',
     skills: 'tags',
     langDisplay: 'bars',
-    sidebarOrder: ['languages', 'skills', 'certifications'],
+    sidebarOrder: ['languages', 'coreCompetencies', 'toolsDelivery', 'certifications'],
     mainOrder: ['profile', 'employment', 'education', 'references', 'availability'],
   },
   {
@@ -90,7 +90,7 @@ export const LAYOUT_DEFINITIONS = [
     skills: 'dots',
     langDisplay: 'bars',
     summaryInHeader: true,
-    sidebarOrder: ['languages', 'skills', 'certifications'],
+    sidebarOrder: ['languages', 'coreCompetencies', 'toolsDelivery', 'certifications'],
     mainOrder: ['employment', 'education', 'references', 'availability'],
   },
   {
@@ -106,7 +106,7 @@ export const LAYOUT_DEFINITIONS = [
     skills: 'list',
     skillsInMain: true,
     langDisplay: 'bars',
-    mainOrder: ['skills', 'profile', 'employment', 'education', 'references', 'availability'],
+    mainOrder: ['coreCompetencies', 'toolsDelivery', 'profile', 'employment', 'education', 'references', 'availability'],
   },
   {
     id: 'magazine-split',
@@ -134,7 +134,7 @@ export const LAYOUT_DEFINITIONS = [
     sectionTitleMain: 'minimal',
     skills: 'list',
     langDisplay: 'text',
-    mainOrder: ['profile', 'employment', 'skills', 'education', 'references', 'availability'],
+    mainOrder: ['profile', 'employment', 'coreCompetencies', 'toolsDelivery', 'education', 'references', 'availability'],
   },
   {
     id: 'card-modern',
@@ -149,7 +149,7 @@ export const LAYOUT_DEFINITIONS = [
     sectionTitleSidebar: 'caps',
     skills: 'dots',
     langDisplay: 'dots',
-    sidebarOrder: ['photo', 'skills', 'languages', 'certifications', 'references'],
+    sidebarOrder: ['photo', 'coreCompetencies', 'toolsDelivery', 'languages', 'certifications', 'references'],
     mainOrder: ['profile', 'employment', 'education', 'availability'],
   },
   {
@@ -164,7 +164,7 @@ export const LAYOUT_DEFINITIONS = [
     sectionTitleMain: 'pill',
     sectionTitleSidebar: 'underline',
     skills: 'tags',
-    sidebarOrder: ['languages', 'skills', 'certifications'],
+    sidebarOrder: ['languages', 'coreCompetencies', 'toolsDelivery', 'certifications'],
     mainOrder: ['profile', 'employment', 'education', 'references', 'availability'],
   },
   {
@@ -180,7 +180,7 @@ export const LAYOUT_DEFINITIONS = [
     sectionTitleSidebar: 'caps',
     skills: 'tags',
     contactInSidebar: true,
-    sidebarOrder: ['photo', 'contact', 'skills', 'languages', 'certifications', 'references'],
+    sidebarOrder: ['photo', 'contact', 'coreCompetencies', 'toolsDelivery', 'languages', 'certifications', 'references'],
     mainOrder: ['profile', 'employment', 'education', 'availability'],
   },
 ];
