@@ -59,6 +59,7 @@ import {
   usesMultiRoleDisplay,
 } from './employmentRoles';
 import { exportCvToPdf } from './printCv';
+import { cvOutputBaseName } from './outputName';
 import {
   AVAILABILITY_FIELD_DEFS,
   availabilityFieldVisibleKey,
@@ -312,8 +313,8 @@ function App() {
   }, [data, templateId, viewMode, spacingFactor, fontSizeRatio]);
 
   React.useEffect(() => {
-    if (data.personal?.name) {
-      document.title = `${data.personal.name.trim()} - CV`;
+    if (data.personal?.name?.trim()) {
+      document.title = cvOutputBaseName(data.personal.name);
     } else {
       document.title = 'Creat CV — Premium CV & Resume Engine';
     }
@@ -1645,7 +1646,7 @@ function App() {
               type="button"
               className="btn btn-primary btn-export"
               onClick={() => handlePrint(false)}
-              title="Standard A4 pages — set Margins to 'None' in print dialog for exact match"
+              title="Standard A4 pages. In the print dialog set Margins to None and turn off Headers and footers, so the page does not include the site address."
             >
               PDF
             </button>
@@ -1653,7 +1654,7 @@ function App() {
               type="button"
               className="btn btn-export"
               onClick={() => handlePrint(true)}
-              title="One tall page with no page breaks — good for sharing or scrolling PDFs"
+              title="One tall page with no page breaks. Turn off Headers and footers in the print dialog so the page does not include the site address."
             >
               1-Page
             </button>

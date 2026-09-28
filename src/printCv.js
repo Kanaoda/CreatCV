@@ -68,7 +68,11 @@ export async function exportCvToPdf({ continuous = false, photo, optimizePhotoDa
   const indicators = document.querySelectorAll('.page-break-indicator');
 
   const originalTitle = document.title;
-  document.title = '';
+  const pdfTitle = (filename || '').trim() || 'CV';
+  const applyPdfTitle = () => {
+    document.title = pdfTitle;
+  };
+  applyPdfTitle();
 
   if (texture) texture.style.display = 'none';
   indicators.forEach((el) => { el.style.display = 'none'; });
@@ -86,19 +90,20 @@ export async function exportCvToPdf({ continuous = false, photo, optimizePhotoDa
   if (continuous) document.body.classList.add('cv-print-continuous');
 
   let pageStyleEl = null;
-  let beforePrintHandler = null;
+  const beforePrintHandler = () => {
+    applyPdfTitle();
+    if (continuous) {
+      pageStyleEl = injectContinuousPageStyle(measureContinuousPageHeightMm());
+    }
+  };
 
   try {
     await waitForLayout();
 
     if (continuous) {
       pageStyleEl = injectContinuousPageStyle(measureContinuousPageHeightMm());
-
-      beforePrintHandler = () => {
-        pageStyleEl = injectContinuousPageStyle(measureContinuousPageHeightMm());
-      };
-      window.addEventListener('beforeprint', beforePrintHandler);
     }
+    window.addEventListener('beforeprint', beforePrintHandler);
 
     await new Promise((resolve) => {
       const cleanup = () => {
@@ -109,7 +114,7 @@ export async function exportCvToPdf({ continuous = false, photo, optimizePhotoDa
       window.print();
     });
   } finally {
-    if (beforePrintHandler) window.removeEventListener('beforeprint', beforePrintHandler);
+    window.removeEventListener('beforeprint', beforePrintHandler);
 
     document.body.classList.remove('cv-print-mode', 'cv-print-continuous');
     document.getElementById(CONTINUOUS_PAGE_STYLE_ID)?.remove();

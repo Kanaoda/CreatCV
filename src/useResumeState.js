@@ -26,6 +26,7 @@ import {
   patchBulletVisible,
 } from './visibility';
 import { exportCvToPdf } from './printCv';
+import { cvOutputFileName } from './outputName';
 import {
   normalizeAvailability,
 } from './availabilityFields.js';
@@ -845,7 +846,7 @@ export function useResumeState(normalizeResumeData) {
     }
     const payload = buildExportPayload(exportData);
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(payload, null, 2));
-    triggerDownload(dataStr, `${exportData.personal.name.toLowerCase().replace(/ /g, '_')}_resume.json`);
+    triggerDownload(dataStr, `${cvOutputFileName(exportData.personal?.name)}.json`);
   };
 
   const importJSON = (event) => {
@@ -864,14 +865,15 @@ export function useResumeState(normalizeResumeData) {
   };
 
   const handlePrint = (continuous = false) => {
-    const filename = data.personal?.name ? `${data.personal.name.trim()} - CV` : 'CV';
+    const filename = cvOutputFileName(data.personal?.name);
     return exportCvToPdf({ continuous, photo: data.personal?.photo, optimizePhotoDataUrl, filename });
   };
 
   const handleWordExport = async () => {
-    const blob = await exportToWord(data, viewMode);
+    const filename = cvOutputFileName(data.personal?.name);
+    const blob = await exportToWord(data, viewMode, filename);
     const url = URL.createObjectURL(blob);
-    triggerDownload(url, `${data.personal.name.toLowerCase().replace(/ /g, '_')}_cv.docx`);
+    triggerDownload(url, `${filename}.docx`);
     URL.revokeObjectURL(url);
   };
 
