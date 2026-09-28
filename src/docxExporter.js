@@ -28,6 +28,7 @@ import {
   visibleEmploymentRoles,
   visibleRoleBullets,
 } from './employmentRoles';
+import { cvOutputFileName } from './outputName';
 import { 
   Document, 
   Packer, 
@@ -106,7 +107,7 @@ function profileParagraphs(summary) {
     .filter(Boolean);
 }
 
-export async function exportToWord(data, viewMode) {
+export async function exportToWord(data, viewMode, outputTitle) {
   const children = [];
 
   const addSectionTitle = (text) => {
@@ -563,7 +564,7 @@ export async function exportToWord(data, viewMode) {
 
   const doc = new Document({
     creator: 'CreatCV',
-    title: `${data.personal?.name || 'CV'} — ATS Word`,
+    title: outputTitle || cvOutputFileName(data.personal?.name),
     description: 'Single-column ATS-oriented resume export from CreatCV',
     sections: [
       {
