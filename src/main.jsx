@@ -171,6 +171,7 @@ const normalizeResumeData = (raw) => {
   education: (raw.education || []).map((edu, i) => ({
     ...edu,
     id: edu.id || `edu_${i}`,
+    grade: edu.grade || '',
     visible: edu.visible !== false,
     bullets: normalizeBullets(edu.bullets, `edu_bullet_${i}`),
   })),
@@ -1307,9 +1308,18 @@ function App() {
                           onChange={(e) => updateEducation(edu.id, 'period', e.target.value)}
                         />
                       </div>
+                      <div className="form-group">
+                        <label>Grade / GPA (optional)</label>
+                        <input
+                          type="text"
+                          value={edu.grade || ''}
+                          onChange={(e) => updateEducation(edu.id, 'grade', e.target.value)}
+                          placeholder="e.g. First Class Honours, GPA 3.8/4.0"
+                        />
+                      </div>
                       <div className="nested-form-list">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#a5b4fc' }}>Details / Grades</label>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#a5b4fc' }}>Details</label>
                           <button className="btn" style={{ padding: '2px 6px', fontSize: '0.7rem' }} onClick={() => addEduBullet(edu.id)}>+ Add Bullet</button>
                         </div>
                         <div className="nested-sortable-list">
