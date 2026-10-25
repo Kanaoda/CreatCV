@@ -352,6 +352,20 @@ export async function exportToWord(data, viewMode, outputTitle) {
           ]
         })
       );
+      const gradeText = (edu.grade || '').trim();
+      if (gradeText) {
+        children.push(
+          new Paragraph({
+            spacing: { after: 40 },
+            children: [
+              new TextRun({
+                text: gradeText,
+                italics: true,
+              }),
+            ],
+          })
+        );
+      }
       const eduBullets = visibleBullets(edu.bullets);
       if (eduBullets.length > 0) {
         eduBullets.forEach(bullet => {
@@ -522,7 +536,7 @@ export async function exportToWord(data, viewMode, outputTitle) {
 
       if (groups.length > 0) {
         children.push(new Paragraph({ children: [new PageBreak()] }));
-        addSectionTitle('Standalone Project Deliveries');
+        addSectionTitle('Selected Projects');
 
         groups.forEach(({ emp, projects }) => {
           children.push(

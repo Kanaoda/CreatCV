@@ -26,7 +26,7 @@ export function ProjectListAppendix({ employment, colorOverrides, className = ''
         </div>
       )}
       <div className="cv-section cv-project-appendix-body">
-        <div className="cv-section-title">Standalone Project Deliveries</div>
+        <div className="cv-section-title">Selected Projects</div>
         {groups.map(({ emp, projects }) => (
           <div key={emp.id} className="cv-project-appendix-group">
             <div className="cv-project-appendix-lead">

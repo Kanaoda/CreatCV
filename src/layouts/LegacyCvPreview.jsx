@@ -526,6 +526,15 @@ export function LegacyCvPreview({ model }) {
                         placeholder="School / Institution"
                       />
                     </div>
+                    {(edu.grade || '').trim() && (
+                      <div className="cv-education-grade">
+                        <EditableText
+                          value={edu.grade}
+                          onChange={(val) => updateEducation(edu.id, 'grade', val)}
+                          placeholder="Grade / GPA"
+                        />
+                      </div>
+                    )}
                     {eduBullets.length > 0 && (
                       <ul className="bullets-list" style={{ marginTop: '6px' }}>
                         {eduBullets.map((b, bIdx) => (

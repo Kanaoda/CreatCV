@@ -82,6 +82,7 @@
       "degree": "[Degree or Qualification Name]",
       "school": "[University / Institution Name]",
       "period": "[Start Year – End Year]",
+      "grade": "",
       "visible": true,
       "bullets": [
         {

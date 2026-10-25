@@ -2130,6 +2130,15 @@ input[type="color"]::-webkit-color-swatch {
   page-break-before: avoid;
 }
 
+.cv-education-grade {
+  font-size: 0.8rem;
+  color: var(--cv-education-school, var(--cv-text-light));
+  font-weight: 500;
+  margin-top: 2px;
+  break-before: avoid;
+  page-break-before: avoid;
+}
+
 .cv-reference-entry {
   margin-bottom: calc(12px * var(--cv-spacing-factor, 1));
 }

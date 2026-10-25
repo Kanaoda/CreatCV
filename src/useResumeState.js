@@ -295,6 +295,7 @@ export function useResumeState(normalizeResumeData) {
           degree: 'Degree / Qualification',
           school: 'Institution Name',
           period: 'Start - End',
+          grade: '',
           visible: true,
           bullets: [],
         },
