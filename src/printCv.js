@@ -90,10 +90,9 @@ export async function exportCvToPdf({ continuous = false, photo, optimizePhotoDa
   if (continuous) document.body.classList.add('cv-print-continuous');
 
   // Chrome Save-as-PDF drops hyperlink annotations when an <a> only wraps
-  // contentEditable nodes. Flatten those anchors to plain text for print.
-  // Keep .cv-contact-open-link untouched (plain 🔗 / icon, already PDF-safe).
+  // contentEditable nodes. Flatten cert name links; contact links are already plain.
   const flattenAnchors = [
-    ...document.querySelectorAll('.cv-page a.cv-contact-link, .cv-page a.cert-name-link'),
+    ...document.querySelectorAll('.cv-page a.cert-name-link'),
   ];
   const flattenRestore = flattenAnchors.map((a) => ({ a, html: a.innerHTML }));
   flattenAnchors.forEach((a) => {
