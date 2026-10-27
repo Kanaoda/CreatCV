@@ -979,7 +979,6 @@ export function useResumeState(normalizeResumeData) {
     buildExportPayload,
     applyImportedPayload,
     resetToDefaultTemplate,
-    triggerDownload,
     exportJSON,
     importJSON,
     handlePrint,
