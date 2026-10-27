@@ -465,7 +465,13 @@ function App() {
           </div>
 
           <div className="editor-header-actions">
-            <button className="btn btn-primary" onClick={exportJSON}>Save JSON</button>
+            <button
+              className="btn btn-primary"
+              onClick={exportJSON}
+              title="Save CV JSON — you will choose which local folder to save into"
+            >
+              Save JSON
+            </button>
             <label className="btn" style={{ position: 'relative', overflow: 'hidden' }}>
               Load JSON
               <input type="file" accept=".json" onChange={importJSON} style={{ position: 'absolute', opacity: 0, right: 0, top: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
@@ -1679,7 +1685,7 @@ function App() {
               type="button"
               className="btn btn-primary btn-export"
               onClick={() => handlePrint(false)}
-              title="Standard A4 pages. In the print dialog set Margins to None and turn off Headers and footers, so the page does not include the site address."
+              title="Export PDF (A4): pick a folder, then in the print dialog choose Save as PDF (Margins None, no headers/footers)."
             >
               PDF
             </button>
@@ -1687,11 +1693,16 @@ function App() {
               type="button"
               className="btn btn-export"
               onClick={() => handlePrint(true)}
-              title="One tall page with no page breaks. Turn off Headers and footers in the print dialog so the page does not include the site address."
+              title="One tall PDF: pick a folder, then in the print dialog choose Save as PDF (no headers/footers)."
             >
               1-Page
             </button>
-            <button type="button" className="btn btn-export" onClick={handleWordExport} title="Download ATS-friendly Word (.docx): single column, no sidebar layout — for HR systems. Use PDF/print for designed layout.">
+            <button
+              type="button"
+              className="btn btn-export"
+              onClick={handleWordExport}
+              title="Save Word (.docx) — you will choose which local folder to save into"
+            >
               Word
             </button>
           </div>
