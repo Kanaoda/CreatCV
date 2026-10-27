@@ -27,11 +27,7 @@ import {
 } from './visibility';
 import { exportCvToPdf } from './printCv';
 import { cvOutputFileName } from './outputName';
-import {
-  saveBlobToExportFolder,
-  saveTextToExportFolder,
-  preparePdfExport,
-} from './fileSave';
+import { saveBlobWithPicker } from './fileSave';
 import {
   normalizeAvailability,
 } from './availabilityFields.js';
@@ -844,9 +840,11 @@ export function useResumeState(normalizeResumeData) {
       setData(exportData);
     }
     const payload = buildExportPayload(exportData);
-    const filename = `${cvOutputFileName(exportData.personal?.name)}.json`;
-    await saveTextToExportFolder(JSON.stringify(payload, null, 2), filename, {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    await saveBlobWithPicker(blob, {
+      suggestedName: `${cvOutputFileName(exportData.personal?.name)}.json`,
       mimeType: 'application/json',
+      extension: '.json',
       description: 'CV JSON',
     });
   };
@@ -866,30 +864,19 @@ export function useResumeState(normalizeResumeData) {
     event.target.value = '';
   };
 
-  const handlePrint = async (continuous = false) => {
-    const baseName = cvOutputFileName(data.personal?.name);
-    // Pick export folder first (same folder flow as JSON/Word). Print → Save as PDF
-    // cannot stream bytes into that handle, so we set the suggested filename and
-    // remind the user to save into the folder they just chose.
-    const prep = await preparePdfExport(baseName);
-    if (prep.cancelled) return;
-    if (prep.folderName) {
-      // Brief, non-blocking hint via title; print dialog still chooses the final path.
-      console.info(`CreatCV: save the PDF into folder “${prep.folderName}” as “${prep.filename}.pdf”`);
-    }
-    return exportCvToPdf({
-      continuous,
-      photo: data.personal?.photo,
-      optimizePhotoDataUrl,
-      filename: prep.filename,
-    });
+  // Save as PDF in the print dialog picks the folder and prefills document.title as the name.
+  const handlePrint = (continuous = false) => {
+    const filename = cvOutputFileName(data.personal?.name);
+    return exportCvToPdf({ continuous, photo: data.personal?.photo, optimizePhotoDataUrl, filename });
   };
 
   const handleWordExport = async () => {
-    const filename = `${cvOutputFileName(data.personal?.name)}.docx`;
-    const blob = await exportToWord(data, viewMode, filename.replace(/\.docx$/i, ''));
-    await saveBlobToExportFolder(blob, filename, {
+    const filename = cvOutputFileName(data.personal?.name);
+    const blob = await exportToWord(data, viewMode, filename);
+    await saveBlobWithPicker(blob, {
+      suggestedName: `${filename}.docx`,
       mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      extension: '.docx',
       description: 'Word document',
     });
   };
