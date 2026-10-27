@@ -219,7 +219,6 @@ export function LegacyCvPreview({ model }) {
               if (!href && !(link.label || '').trim()) return null;
               return (
                 <span key={idx}>
-                  🔗{' '}
                   <ContactLink
                     href={href}
                     label={link.label || link.url}

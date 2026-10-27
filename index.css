@@ -1522,25 +1522,28 @@ input[type="color"]::-webkit-color-swatch {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--cv-accent, #2563eb);
+  color: inherit;
   text-decoration: none;
   line-height: 1;
-  padding: 1px;
+  padding: 0 1px;
   border-radius: 3px;
   flex-shrink: 0;
   pointer-events: auto;
   cursor: pointer;
   position: relative;
   z-index: 2;
+  font-style: normal;
+  font-weight: 400;
 }
 
 .cv-contact-open-link:hover {
-  color: var(--cv-primary, #0f172a);
-  background-color: rgba(37, 99, 235, 0.08);
+  background-color: rgba(37, 99, 235, 0.1);
 }
 
-.cv-contact-open-icon {
-  display: block;
+.cv-contact-open-link--dead {
+  cursor: default;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 @media print {
@@ -1551,7 +1554,8 @@ input[type="color"]::-webkit-color-swatch {
   }
 
   .cv-contact-open-link {
-    color: var(--cv-accent, #2563eb) !important;
+    color: inherit !important;
+    /* Plain emoji + href — Chrome keeps this annotation like cert icons */
   }
 }
 

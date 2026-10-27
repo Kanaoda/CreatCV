@@ -118,7 +118,6 @@ export function CvLayoutRenderer({ layout, model }) {
         if (!href && !(link.label || '').trim()) return null;
         return (
           <span key={idx}>
-            🔗{' '}
             <ContactLink
               href={href}
               label={link.label || link.url}

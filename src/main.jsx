@@ -673,7 +673,7 @@ function App() {
                   />
                   <p className="sortable-list-hint" style={{ marginTop: '6px' }}>
                     Paste the full profile link, e.g. https://www.linkedin.com/in/your-name
-                    (not just your name). A small link icon will appear next to LinkedIn on the CV.
+                    (not just your name). In the PDF, click the 🔗 icon beside LinkedIn.
                   </p>
                 </div>
                 <div className="form-group">
