@@ -1494,8 +1494,7 @@ input[type="color"]::-webkit-color-swatch {
   color: var(--cv-head-text, var(--cv-header-color, var(--cv-text-light)));
 }
 
-.cv-header-details a,
-.cv-contact-link {
+.cv-header-details a {
   color: inherit;
   text-decoration: none;
 }
@@ -1505,33 +1504,42 @@ input[type="color"]::-webkit-color-swatch {
   align-items: center;
   gap: 4px;
   max-width: 100%;
+}
+
+/* Icon + label are separate plain anchors to the same URL (click either → open link) */
+a.cv-contact-open-link,
+a.cv-contact-text-link {
   color: inherit;
   text-decoration: none;
-  pointer-events: auto;
-  cursor: default;
-}
-
-a.cv-contact-open-link {
   cursor: pointer;
-  border-bottom: 1px solid transparent;
-  border-radius: 2px;
+  pointer-events: auto;
   position: relative;
   z-index: 2;
+  border-bottom: 1px solid transparent;
 }
 
-a.cv-contact-open-link:hover {
+a.cv-contact-open-link:hover,
+a.cv-contact-text-link:hover {
   border-bottom-color: currentColor;
 }
 
-.cv-contact-link-icon,
-.cv-contact-link-label {
-  pointer-events: none; /* clicks hit the parent <a> so PDF + browser both open href */
+a.cv-contact-open-link {
+  display: inline;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+a.cv-contact-text-link {
+  display: inline;
+  font-weight: 600;
 }
 
 @media print {
-  a.cv-contact-open-link {
+  a.cv-contact-open-link,
+  a.cv-contact-text-link {
     color: inherit !important;
     text-decoration: none !important;
+    border-bottom-color: transparent !important;
   }
 }
 
