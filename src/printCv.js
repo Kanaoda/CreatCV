@@ -89,6 +89,14 @@ export async function exportCvToPdf({ continuous = false, photo, optimizePhotoDa
   document.body.classList.add('cv-print-mode');
   if (continuous) document.body.classList.add('cv-print-continuous');
 
+  // Chrome print→PDF often drops link annotations when the link text is
+  // contentEditable. Freeze editables for the print pass, then restore.
+  const editables = [...document.querySelectorAll('.cv-page .cv-editable-text')];
+  const editableRestore = editables.map((el) => el.getAttribute('contenteditable'));
+  editables.forEach((el) => {
+    el.setAttribute('contenteditable', 'false');
+  });
+
   let pageStyleEl = null;
   const beforePrintHandler = () => {
     applyPdfTitle();
@@ -123,6 +131,10 @@ export async function exportCvToPdf({ continuous = false, photo, optimizePhotoDa
     if (texture) texture.style.display = '';
     indicators.forEach((el) => { el.style.display = ''; });
     photoEls.forEach((img, i) => { img.src = photoRestore[i]; });
+    editables.forEach((el, i) => {
+      if (editableRestore[i] == null) el.removeAttribute('contenteditable');
+      else el.setAttribute('contenteditable', editableRestore[i]);
+    });
 
     document.title = originalTitle;
   }

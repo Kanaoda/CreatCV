@@ -1,5 +1,6 @@
 import React from 'react';
 import { EditableText } from '../components/EditableText.jsx';
+import { ContactLink } from '../components/ContactLink.jsx';
 import { EmploymentRolesPreview } from '../EmploymentRolesPreview';
 import { ProjectListAppendix } from '../ProjectListAppendix';
 import { PHOTO_PLACEMENT } from '../templates/constants.js';
@@ -213,21 +214,26 @@ export function LegacyCvPreview({ model }) {
                 placeholder="Location/Address"
               />
             </span>
-            {data.personal.links?.map((link, idx) => (
-              <span key={idx}>
-                🔗{' '}
-                <EditableText
-                  value={link.label}
-                  onChange={(val) => {
-                    const updatedLinks = [...data.personal.links];
-                    updatedLinks[idx] = { ...updatedLinks[idx], label: val };
-                    handlePersonalChange('links', updatedLinks);
-                  }}
-                  placeholder="Link Label"
-                  style={{ fontWeight: 600 }}
-                />
-              </span>
-            ))}
+            {data.personal.links?.map((link, idx) => {
+              const href = normalizeExternalUrl(link.url);
+              if (!href && !(link.label || '').trim()) return null;
+              return (
+                <span key={idx}>
+                  🔗{' '}
+                  <ContactLink
+                    href={href}
+                    label={link.label || link.url}
+                    onLabelChange={(val) => {
+                      const updatedLinks = [...data.personal.links];
+                      updatedLinks[idx] = { ...updatedLinks[idx], label: val };
+                      handlePersonalChange('links', updatedLinks);
+                    }}
+                    placeholder="Link Label"
+                    style={{ fontWeight: 600 }}
+                  />
+                </span>
+              );
+            })}
           </div>
         </div>
         {data.personal.photo && template.photoPlacement === PHOTO_PLACEMENT.HEADER && (
