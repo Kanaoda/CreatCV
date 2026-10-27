@@ -10,11 +10,11 @@
       "links": [
         {
           "label": "LinkedIn",
-          "url": "[https://linkedin.com/in/your-profile]"
+          "url": "https://www.linkedin.com/in/your-profile"
         },
         {
           "label": "Portfolio",
-          "url": "[https://your-portfolio.com]"
+          "url": "https://your-portfolio.com"
         }
       ],
       "photo": "",

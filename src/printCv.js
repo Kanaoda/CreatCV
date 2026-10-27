@@ -89,17 +89,27 @@ export async function exportCvToPdf({ continuous = false, photo, optimizePhotoDa
   document.body.classList.add('cv-print-mode');
   if (continuous) document.body.classList.add('cv-print-continuous');
 
-  // Chrome Save-as-PDF drops hyperlink annotations when an <a> only wraps
-  // contentEditable nodes. Flatten cert name links; contact links are already plain.
+  // Flatten text links that may wrap contentEditable. Leave .cert-verify-link alone —
+  // that SVG icon pattern is what already works for certificates in Save-as-PDF.
   const flattenAnchors = [
-    ...document.querySelectorAll('.cv-page a.cert-name-link'),
+    ...document.querySelectorAll('.cv-page a.cert-name-link, .cv-page a.cv-contact-text-link'),
   ];
-  const flattenRestore = flattenAnchors.map((a) => ({ a, html: a.innerHTML }));
+  const flattenRestore = flattenAnchors.map((a) => ({
+    a,
+    html: a.innerHTML,
+    cssText: a.style.cssText,
+  }));
   flattenAnchors.forEach((a) => {
-    const editable = a.querySelector('.cv-editable-text');
-    if (!editable) return;
-    const text = (editable.innerText || editable.textContent || '').trim();
-    a.textContent = text || a.getAttribute('title') || a.getAttribute('href') || '';
+    const text = (a.innerText || a.textContent || '').trim()
+      || a.getAttribute('title')
+      || a.getAttribute('href')
+      || '';
+    a.textContent = text;
+    a.style.display = 'inline';
+    a.style.position = 'static';
+    a.style.transform = 'none';
+    a.style.filter = 'none';
+    a.removeAttribute('contenteditable');
   });
 
   const editables = [...document.querySelectorAll('.cv-page .cv-editable-text')];
@@ -146,8 +156,9 @@ export async function exportCvToPdf({ continuous = false, photo, optimizePhotoDa
       if (editableRestore[i] == null) el.removeAttribute('contenteditable');
       else el.setAttribute('contenteditable', editableRestore[i]);
     });
-    flattenRestore.forEach(({ a, html }) => {
+    flattenRestore.forEach(({ a, html, cssText }) => {
       a.innerHTML = html;
+      a.style.cssText = cssText;
     });
 
     document.title = originalTitle;
