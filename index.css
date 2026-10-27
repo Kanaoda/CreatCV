@@ -1500,6 +1500,13 @@ input[type="color"]::-webkit-color-swatch {
   text-decoration: none;
 }
 
+.cv-contact-link-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+}
+
 .cv-contact-link {
   display: inline;
   pointer-events: auto;
@@ -1511,12 +1518,40 @@ input[type="color"]::-webkit-color-swatch {
   border-bottom-color: currentColor;
 }
 
+.cv-contact-open-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cv-accent, #2563eb);
+  text-decoration: none;
+  line-height: 1;
+  padding: 1px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+}
+
+.cv-contact-open-link:hover {
+  color: var(--cv-primary, #0f172a);
+  background-color: rgba(37, 99, 235, 0.08);
+}
+
+.cv-contact-open-icon {
+  display: block;
+}
+
 @media print {
   .cv-contact-link {
-    /* Keep a real hyperlink box for Chrome Save as PDF annotations */
     color: inherit !important;
     text-decoration: none !important;
     border-bottom-color: transparent !important;
+  }
+
+  .cv-contact-open-link {
+    color: var(--cv-accent, #2563eb) !important;
   }
 }
 

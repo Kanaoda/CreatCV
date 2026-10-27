@@ -82,9 +82,10 @@ import {
 } from './fineTuningControls.js';
 
 const normalizeExternalUrl = (url) => {
-  // Strip template placeholder brackets like [https://linkedin.com/in/you]
-  const trimmed = (url || '').trim().replace(/^\[+\s*/, '').replace(/\s*\]+$/, '');
-  if (!trimmed) return '';
+  // Strip template placeholder brackets / trailing punctuation from pasted links
+  let trimmed = (url || '').trim().replace(/^\[+\s*/, '').replace(/\s*\]+$/, '');
+  trimmed = trimmed.replace(/[.,;:]+$/g, '');
+  if (!trimmed || /^\[.+\]$/.test(trimmed)) return '';
   if (/^(https?:\/\/|mailto:)/i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
 };
@@ -656,15 +657,24 @@ function App() {
                 </div>
                 <div className="form-group">
                   <label>LinkedIn URL</label>
-                  <input type="text" value={data.personal.links && data.personal.links[0] ? data.personal.links[0].url : ''} onChange={e => {
-                    const newLinks = [...(data.personal.links || [])];
-                    if (newLinks[0]) {
-                      newLinks[0].url = e.target.value;
-                    } else {
-                      newLinks.push({ label: 'LinkedIn', url: e.target.value });
-                    }
-                    handlePersonalChange('links', newLinks);
-                  }} />
+                  <input
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://www.linkedin.com/in/your-profile"
+                    value={data.personal.links?.[0]?.url || ''}
+                    onChange={(e) => {
+                      const url = e.target.value;
+                      const prev = data.personal.links || [];
+                      const newLinks = prev.length
+                        ? prev.map((link, i) => (i === 0 ? { ...link, url } : link))
+                        : [{ label: 'LinkedIn', url }];
+                      handlePersonalChange('links', newLinks);
+                    }}
+                  />
+                  <p className="sortable-list-hint" style={{ marginTop: '6px' }}>
+                    Paste the full profile link, e.g. https://www.linkedin.com/in/your-name
+                    (not just your name). A small link icon will appear next to LinkedIn on the CV.
+                  </p>
                 </div>
                 <div className="form-group">
                   <label>Upload Profile Photo</label>
