@@ -468,7 +468,7 @@ function App() {
             <button
               className="btn btn-primary"
               onClick={exportJSON}
-              title="Save CV JSON — you will choose which local folder to save into"
+              title="Save CV JSON — choose the folder and filename in the Save dialog"
             >
               Save JSON
             </button>
@@ -1685,7 +1685,7 @@ function App() {
               type="button"
               className="btn btn-primary btn-export"
               onClick={() => handlePrint(false)}
-              title="Export PDF (A4): pick a folder, then in the print dialog choose Save as PDF (Margins None, no headers/footers)."
+              title="Export PDF (A4): in the print dialog choose Save as PDF, then pick the folder (Margins None, no headers/footers)."
             >
               PDF
             </button>
@@ -1693,7 +1693,7 @@ function App() {
               type="button"
               className="btn btn-export"
               onClick={() => handlePrint(true)}
-              title="One tall PDF: pick a folder, then in the print dialog choose Save as PDF (no headers/footers)."
+              title="One tall PDF: in the print dialog choose Save as PDF, then pick the folder (no headers/footers)."
             >
               1-Page
             </button>
@@ -1701,7 +1701,7 @@ function App() {
               type="button"
               className="btn btn-export"
               onClick={handleWordExport}
-              title="Save Word (.docx) — you will choose which local folder to save into"
+              title="Save Word (.docx) — choose the folder and filename in the Save dialog"
             >
               Word
             </button>
