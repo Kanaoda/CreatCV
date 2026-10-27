@@ -1,5 +1,6 @@
 import React from 'react';
 import { EditableText } from '../components/EditableText.jsx';
+import { ContactLink } from '../components/ContactLink.jsx';
 import { EmploymentRolesPreview } from '../EmploymentRolesPreview';
 import { ProjectListAppendix } from '../ProjectListAppendix';
 import {
@@ -118,31 +119,17 @@ export function CvLayoutRenderer({ layout, model }) {
         return (
           <span key={idx}>
             🔗{' '}
-            {href ? (
-              <a href={href} target="_blank" rel="noreferrer">
-                <EditableText
-                  value={link.label || link.url}
-                  onChange={(val) => {
-                    const updatedLinks = [...data.personal.links];
-                    updatedLinks[idx] = { ...updatedLinks[idx], label: val };
-                    handlePersonalChange('links', updatedLinks);
-                  }}
-                  placeholder="Link Label"
-                  style={{ fontWeight: 600 }}
-                />
-              </a>
-            ) : (
-              <EditableText
-                value={link.label}
-                onChange={(val) => {
-                  const updatedLinks = [...data.personal.links];
-                  updatedLinks[idx] = { ...updatedLinks[idx], label: val };
-                  handlePersonalChange('links', updatedLinks);
-                }}
-                placeholder="Link Label"
-                style={{ fontWeight: 600 }}
-              />
-            )}
+            <ContactLink
+              href={href}
+              label={link.label || link.url}
+              onLabelChange={(val) => {
+                const updatedLinks = [...data.personal.links];
+                updatedLinks[idx] = { ...updatedLinks[idx], label: val };
+                handlePersonalChange('links', updatedLinks);
+              }}
+              placeholder="Link Label"
+              style={{ fontWeight: 600 }}
+            />
           </span>
         );
       })}
@@ -180,31 +167,17 @@ export function CvLayoutRenderer({ layout, model }) {
         if (!href && !(link.label || '').trim()) return null;
         return (
           <div key={idx}>
-            {href ? (
-              <a href={href} target="_blank" rel="noreferrer">
-                <EditableText
-                  value={link.label || link.url}
-                  onChange={(val) => {
-                    const updatedLinks = [...data.personal.links];
-                    updatedLinks[idx] = { ...updatedLinks[idx], label: val };
-                    handlePersonalChange('links', updatedLinks);
-                  }}
-                  placeholder="Link Label"
-                  style={{ fontWeight: 600 }}
-                />
-              </a>
-            ) : (
-              <EditableText
-                value={link.label}
-                onChange={(val) => {
-                  const updatedLinks = [...data.personal.links];
-                  updatedLinks[idx] = { ...updatedLinks[idx], label: val };
-                  handlePersonalChange('links', updatedLinks);
-                }}
-                placeholder="Link Label"
-                style={{ fontWeight: 600 }}
-              />
-            )}
+            <ContactLink
+              href={href}
+              label={link.label || link.url}
+              onLabelChange={(val) => {
+                const updatedLinks = [...data.personal.links];
+                updatedLinks[idx] = { ...updatedLinks[idx], label: val };
+                handlePersonalChange('links', updatedLinks);
+              }}
+              placeholder="Link Label"
+              style={{ fontWeight: 600 }}
+            />
           </div>
         );
       })}

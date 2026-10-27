@@ -82,7 +82,8 @@ import {
 } from './fineTuningControls.js';
 
 const normalizeExternalUrl = (url) => {
-  const trimmed = (url || '').trim();
+  // Strip template placeholder brackets like [https://linkedin.com/in/you]
+  const trimmed = (url || '').trim().replace(/^\[+\s*/, '').replace(/\s*\]+$/, '');
   if (!trimmed) return '';
   if (/^(https?:\/\/|mailto:)/i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
