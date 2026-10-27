@@ -41,8 +41,9 @@ import {
 } from 'docx';
 
 const normalizeExternalUrl = (url) => {
-  const trimmed = (url || '').trim().replace(/^\[+\s*/, '').replace(/\s*\]+$/, '');
-  if (!trimmed) return '';
+  let trimmed = (url || '').trim().replace(/^\[+\s*/, '').replace(/\s*\]+$/, '');
+  trimmed = trimmed.replace(/[.,;:]+$/g, '');
+  if (!trimmed || /^\[.+\]$/.test(trimmed)) return '';
   if (/^(https?:\/\/|mailto:)/i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
 };

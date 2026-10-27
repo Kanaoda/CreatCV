@@ -89,8 +89,19 @@ export async function exportCvToPdf({ continuous = false, photo, optimizePhotoDa
   document.body.classList.add('cv-print-mode');
   if (continuous) document.body.classList.add('cv-print-continuous');
 
-  // Chrome print→PDF often drops link annotations when the link text is
-  // contentEditable. Freeze editables for the print pass, then restore.
+  // Chrome Save-as-PDF drops hyperlink annotations when an <a> only wraps
+  // contentEditable nodes. Flatten those anchors to plain text for print.
+  const flattenAnchors = [
+    ...document.querySelectorAll('.cv-page a.cv-contact-link, .cv-page a.cert-name-link'),
+  ];
+  const flattenRestore = flattenAnchors.map((a) => ({ a, html: a.innerHTML }));
+  flattenAnchors.forEach((a) => {
+    const editable = a.querySelector('.cv-editable-text');
+    if (!editable) return;
+    const text = (editable.innerText || editable.textContent || '').trim();
+    a.textContent = text || a.getAttribute('title') || a.getAttribute('href') || '';
+  });
+
   const editables = [...document.querySelectorAll('.cv-page .cv-editable-text')];
   const editableRestore = editables.map((el) => el.getAttribute('contenteditable'));
   editables.forEach((el) => {
@@ -134,6 +145,9 @@ export async function exportCvToPdf({ continuous = false, photo, optimizePhotoDa
     editables.forEach((el, i) => {
       if (editableRestore[i] == null) el.removeAttribute('contenteditable');
       else el.setAttribute('contenteditable', editableRestore[i]);
+    });
+    flattenRestore.forEach(({ a, html }) => {
+      a.innerHTML = html;
     });
 
     document.title = originalTitle;
