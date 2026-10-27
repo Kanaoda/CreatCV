@@ -1505,57 +1505,33 @@ input[type="color"]::-webkit-color-swatch {
   align-items: center;
   gap: 4px;
   max-width: 100%;
+  color: inherit;
+  text-decoration: none;
+  pointer-events: auto;
+  cursor: default;
 }
 
-.cv-contact-link {
-  display: inline;
-  pointer-events: auto;
+a.cv-contact-open-link {
   cursor: pointer;
   border-bottom: 1px solid transparent;
+  border-radius: 2px;
+  position: relative;
+  z-index: 2;
 }
 
-.cv-contact-link:hover {
+a.cv-contact-open-link:hover {
   border-bottom-color: currentColor;
 }
 
-.cv-contact-open-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: inherit;
-  text-decoration: none;
-  line-height: 1;
-  padding: 0 1px;
-  border-radius: 3px;
-  flex-shrink: 0;
-  pointer-events: auto;
-  cursor: pointer;
-  position: relative;
-  z-index: 2;
-  font-style: normal;
-  font-weight: 400;
-}
-
-.cv-contact-open-link:hover {
-  background-color: rgba(37, 99, 235, 0.1);
-}
-
-.cv-contact-open-link--dead {
-  cursor: default;
-  opacity: 0.7;
-  pointer-events: none;
+.cv-contact-link-icon,
+.cv-contact-link-label {
+  pointer-events: none; /* clicks hit the parent <a> so PDF + browser both open href */
 }
 
 @media print {
-  .cv-contact-link {
+  a.cv-contact-open-link {
     color: inherit !important;
     text-decoration: none !important;
-    border-bottom-color: transparent !important;
-  }
-
-  .cv-contact-open-link {
-    color: inherit !important;
-    /* Plain emoji + href — Chrome keeps this annotation like cert icons */
   }
 }
 

@@ -672,8 +672,9 @@ function App() {
                     }}
                   />
                   <p className="sortable-list-hint" style={{ marginTop: '6px' }}>
-                    Paste the full profile link, e.g. https://www.linkedin.com/in/your-name
-                    (not just your name). In the PDF, click the 🔗 icon beside LinkedIn.
+                    Paste the full profile link, e.g. https://www.linkedin.com/in/your-name.
+                    Click 🔗 LinkedIn on the CV (or in the PDF) to open it. When printing, choose
+                    “Save as PDF” in Chrome/Edge — not “Microsoft Print to PDF”.
                   </p>
                 </div>
                 <div className="form-group">

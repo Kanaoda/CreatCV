@@ -222,11 +222,6 @@ export function LegacyCvPreview({ model }) {
                   <ContactLink
                     href={href}
                     label={link.label || link.url}
-                    onLabelChange={(val) => {
-                      const updatedLinks = [...data.personal.links];
-                      updatedLinks[idx] = { ...updatedLinks[idx], label: val };
-                      handlePersonalChange('links', updatedLinks);
-                    }}
                     placeholder="Link Label"
                     style={{ fontWeight: 600 }}
                   />
