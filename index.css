@@ -1500,46 +1500,37 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 .cv-contact-link-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  /* Reuses .cert-name-row flex; keep header links PDF-safe */
   max-width: 100%;
 }
 
-/* Icon + label are separate plain anchors to the same URL (click either → open link) */
-a.cv-contact-open-link,
-a.cv-contact-text-link {
-  color: inherit;
-  text-decoration: none;
-  cursor: pointer;
-  pointer-events: auto;
-  position: relative;
-  z-index: 2;
-  border-bottom: 1px solid transparent;
-}
-
-a.cv-contact-open-link:hover,
-a.cv-contact-text-link:hover {
-  border-bottom-color: currentColor;
-}
-
-a.cv-contact-open-link {
-  display: inline;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-a.cv-contact-text-link {
-  display: inline;
+.cv-header-details .cv-contact-text-link {
   font-weight: 600;
 }
 
 @media print {
-  a.cv-contact-open-link,
-  a.cv-contact-text-link {
-    color: inherit !important;
-    text-decoration: none !important;
-    border-bottom-color: transparent !important;
+  /* Flex/grid headers often drop Chrome link annotations — flatten for print */
+  .cv-header-details {
+    display: block !important;
+  }
+
+  .cv-header-details > span {
+    display: inline !important;
+  }
+
+  .cv-header-details .cert-name-row,
+  .cv-header-details .cv-contact-link-row {
+    display: inline !important;
+  }
+
+  .cv-header-details .cert-name-link,
+  .cv-header-details .cert-verify-link,
+  .cv-header-details .cv-contact-text-link {
+    display: inline !important;
+    position: static !important;
+    float: none !important;
+    transform: none !important;
+    filter: none !important;
   }
 }
 

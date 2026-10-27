@@ -672,10 +672,21 @@ function App() {
                     }}
                   />
                   <p className="sortable-list-hint" style={{ marginTop: '6px' }}>
-                    Paste the full profile link, e.g. https://www.linkedin.com/in/your-name.
-                    Click 🔗 LinkedIn on the CV (or in the PDF) to open it. When printing, choose
-                    “Save as PDF” in Chrome/Edge — not “Microsoft Print to PDF”.
+                    Paste full URL: https://www.linkedin.com/in/your-name
+                    — then click the LinkedIn text or the small link icon on the CV to open it.
+                    PDF: use Chrome/Edge “Save as PDF” (not Microsoft Print to PDF).
                   </p>
+                  {normalizeExternalUrl(data.personal.links?.[0]?.url) ? (
+                    <p className="sortable-list-hint" style={{ marginTop: '4px' }}>
+                      <a
+                        href={normalizeExternalUrl(data.personal.links[0].url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Test open LinkedIn URL ↗
+                      </a>
+                    </p>
+                  ) : null}
                 </div>
                 <div className="form-group">
                   <label>Upload Profile Photo</label>
