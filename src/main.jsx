@@ -213,6 +213,7 @@ function App() {
     activeTab, setActiveTab,
     fontSizeRatio, setFontSizeRatio,
     spacingFactor, setSpacingFactor,
+    sidebarSpacingFactor, setSidebarSpacingFactor,
     paperTexture, setPaperTexture,
     photoFrameStyle, setPhotoFrameStyle,
     photoScale, setPhotoScale,
@@ -313,7 +314,7 @@ function App() {
 
     resizeObserver.observe(pageEl);
     return () => resizeObserver.disconnect();
-  }, [data, templateId, viewMode, spacingFactor, fontSizeRatio]);
+  }, [data, templateId, viewMode, spacingFactor, sidebarSpacingFactor, fontSizeRatio]);
 
   React.useEffect(() => {
     if (data.personal?.name?.trim()) {
@@ -443,6 +444,7 @@ function App() {
     ...template.themeCssVars,
     ...buildCvColorCssVars(colorOverrides),
     '--cv-spacing-factor': spacingFactor,
+    '--cv-sidebar-spacing-factor': sidebarSpacingFactor,
     '--cv-photo-scale': photoScale,
     fontSize: fontSizeRatio,
   };
@@ -586,6 +588,31 @@ function App() {
                       aria-valuemax={LINE_SPACING_MAX}
                       aria-valuenow={parseSpacingFactor(spacingFactor)}
                       aria-valuetext={lineSpacingLabel(spacingFactor)}
+                    />
+                    <div className="fine-tune-range-ticks" aria-hidden="true">
+                      <span>{LINE_SPACING_MIN}</span>
+                      <span>1.0</span>
+                      <span>{LINE_SPACING_MAX}</span>
+                    </div>
+                  </div>
+                  <div className="form-group fine-tune-slider-group">
+                    <div className="fine-tune-slider-head">
+                      <label htmlFor="sidebar-spacing-range">Sidebar Spacing</label>
+                      <span className="fine-tune-slider-value">{lineSpacingLabel(sidebarSpacingFactor)}</span>
+                    </div>
+                    <input
+                      id="sidebar-spacing-range"
+                      type="range"
+                      className="fine-tune-range"
+                      min={LINE_SPACING_MIN}
+                      max={LINE_SPACING_MAX}
+                      step={LINE_SPACING_STEP}
+                      value={parseSpacingFactor(sidebarSpacingFactor)}
+                      onChange={(e) => setSidebarSpacingFactor(formatSpacingFactor(e.target.value))}
+                      aria-valuemin={LINE_SPACING_MIN}
+                      aria-valuemax={LINE_SPACING_MAX}
+                      aria-valuenow={parseSpacingFactor(sidebarSpacingFactor)}
+                      aria-valuetext={lineSpacingLabel(sidebarSpacingFactor)}
                     />
                     <div className="fine-tune-range-ticks" aria-hidden="true">
                       <span>{LINE_SPACING_MIN}</span>

@@ -52,6 +52,9 @@ export function useResumeState(normalizeResumeData) {
   // Advanced customization state (Canva-like custom controls over presets)
   const [fontSizeRatio, setFontSizeRatio] = useState(defaultAppSettings.fontSizeRatio || '100%');
   const [spacingFactor, setSpacingFactor] = useState(defaultAppSettings.spacingFactor || '1.0');
+  const [sidebarSpacingFactor, setSidebarSpacingFactor] = useState(
+    defaultAppSettings.sidebarSpacingFactor || '1.0',
+  );
   const [paperTexture, setPaperTexture] = useState(defaultAppSettings.paperTexture || 'none');
   const [photoFrameStyle, setPhotoFrameStyle] = useState(defaultAppSettings.photoFrameStyle || 'preset');
   const [photoScale, setPhotoScale] = useState(defaultAppSettings.photoScale || '1.1');
@@ -771,6 +774,7 @@ export function useResumeState(normalizeResumeData) {
       paperTexture,
       fontSizeRatio,
       spacingFactor,
+      sidebarSpacingFactor,
       photoFrameStyle,
       photoScale,
       showSkillRatings,
@@ -795,6 +799,9 @@ export function useResumeState(normalizeResumeData) {
         if (s.paperTexture) setPaperTexture(s.paperTexture);
         if (s.fontSizeRatio) setFontSizeRatio(formatTypoPercent(s.fontSizeRatio));
         if (s.spacingFactor) setSpacingFactor(formatSpacingFactor(s.spacingFactor));
+        if (s.sidebarSpacingFactor) {
+          setSidebarSpacingFactor(formatSpacingFactor(s.sidebarSpacingFactor));
+        }
         if (s.photoFrameStyle) setPhotoFrameStyle(s.photoFrameStyle);
         if (s.photoScale) setPhotoScale(s.photoScale);
         setShowSkillRatings(readShowSkillRatingsFromSettings(s));
@@ -888,6 +895,7 @@ export function useResumeState(normalizeResumeData) {
     activeTab, setActiveTab,
     fontSizeRatio, setFontSizeRatio,
     spacingFactor, setSpacingFactor,
+    sidebarSpacingFactor, setSidebarSpacingFactor,
     paperTexture, setPaperTexture,
     photoFrameStyle, setPhotoFrameStyle,
     photoScale, setPhotoScale,

@@ -1750,16 +1750,18 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 .cv-sidebar-col {
+  /* Independent sidebar spacing — overrides inherited --cv-spacing-factor for descendants */
+  --cv-spacing-factor: var(--cv-sidebar-spacing-factor, 1);
   width: 100%;
   max-width: var(--cv-sidebar-width);
   background-color: var(--cv-sidebar-bg);
-  padding: 24px 20px var(--cv-padding) 20px;
+  padding: calc(24px * var(--cv-sidebar-spacing-factor, 1)) 20px var(--cv-padding) 20px;
   float: none;
   margin: 0;
   border-left: var(--cv-sidebar-border);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: calc(24px * var(--cv-sidebar-spacing-factor, 1));
   flex-shrink: 0;
   align-self: start;
   height: auto;
@@ -2702,7 +2704,7 @@ input[type="color"]::-webkit-color-swatch {
   .cv-sidebar-col {
     position: static !important;
     overflow: visible !important;
-    padding: 24px 20px var(--cv-padding) 20px !important;
+    padding: calc(24px * var(--cv-sidebar-spacing-factor, 1)) 20px var(--cv-padding) 20px !important;
     background-color: var(--cv-sidebar-bg) !important;
     box-shadow: none !important;
     z-index: auto !important;
