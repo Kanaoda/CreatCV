@@ -4,6 +4,7 @@
   "paperTexture": "none",
   "fontSizeRatio": "100%",
   "spacingFactor": "1.0",
+  "sidebarSpacingFactor": "1.0",
   "photoFrameStyle": "preset",
   "photoScale": "1.0",
   "showSkillRatings": false,
