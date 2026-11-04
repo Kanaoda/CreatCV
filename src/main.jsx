@@ -16,7 +16,12 @@ import {
 } from './templates/index.js';
 import { CvLayoutRenderer, LegacyCvPreview } from './layouts/index.js';
 import { EditableText } from './components/EditableText.jsx';
-import { parseSkillItems } from './cvPreview/helpers.js';
+import {
+  formatSkillItemsText,
+  normalizeSkillItemsText,
+  parseSkillItems,
+  parseSkillItemsText,
+} from './cvPreview/helpers.js';
 import { getSkillEntries, normalizeSkillItemRatings } from './cvPreview/skillRatings.js';
 import './layouts/layouts.css';
 import { CreatCvLogo } from './CreatCvLogo';
@@ -127,8 +132,8 @@ const normalizeResumeData = (raw) => {
   const skillSections = normalizeSkillSections(raw).map((sec) => ({
     ...sec,
     categories: (sec.categories || []).map((cat) => {
-      const itemsText = cat.itemsText ?? (cat.items || []).join(', ');
-      const items = itemsText.split(',').map((item) => item.trim()).filter(Boolean);
+      const itemsText = normalizeSkillItemsText(cat.itemsText, cat.items);
+      const items = parseSkillItemsText(itemsText);
       return {
         ...cat,
         items,
@@ -1206,13 +1211,13 @@ function App() {
                           />
                         </div>
                         <div className="form-group">
-                          <label>Skill Tags (Comma-separated)</label>
+                          <label>Skill Tags (Semicolon-separated)</label>
                           <input
                             type="text"
-                            value={skill.itemsText != null ? skill.itemsText : (skill.items || []).join(', ')}
+                            value={skill.itemsText != null ? skill.itemsText : formatSkillItemsText(skill.items || [])}
                             onChange={(e) => updateSkillItemsText(section.id, idx, e.target.value)}
                             onBlur={() => commitSkillItems(section.id, idx)}
-                            placeholder="Scrum, PMO, Logistics"
+                            placeholder="Scrum; PMO; Logistics"
                           />
                         </div>
                         {showSkillRatings && parseSkillItems(skill).length > 0 && (

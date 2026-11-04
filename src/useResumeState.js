@@ -9,7 +9,11 @@ import {
   buildAppSettingsExport,
   readShowSkillRatingsFromSettings,
 } from './templates/index.js';
-import { parseSkillItems } from './cvPreview/helpers.js';
+import {
+  formatSkillItemsText,
+  parseSkillItems,
+  parseSkillItemsText,
+} from './cvPreview/helpers.js';
 import { normalizeSkillItemRatings } from './cvPreview/skillRatings.js';
 import {
   optimizePhotoDataUrl,
@@ -686,11 +690,11 @@ export function useResumeState(normalizeResumeData) {
           ...s,
           categories: (s.categories || []).map((c, i) => {
             if (i !== catIndex) return c;
-            const text = c.itemsText != null ? c.itemsText : (c.items || []).join(', ');
-            const items = text.split(',').map((item) => item.trim()).filter(Boolean);
+            const text = c.itemsText != null ? c.itemsText : formatSkillItemsText(c.items || []);
+            const items = parseSkillItemsText(text);
             return {
               ...c,
-              itemsText: text,
+              itemsText: formatSkillItemsText(items),
               items,
               itemRatings: normalizeSkillItemRatings(items, c.itemRatings),
             };

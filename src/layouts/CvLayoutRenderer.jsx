@@ -471,7 +471,7 @@ export function CvLayoutRenderer({ layout, model }) {
                               onChange={(val) => {
                                 const newItems = [...rawItems];
                                 newItems[itemIdx] = val;
-                                updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
+                                updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join('; '));
                               }}
                               placeholder="Skill"
                             />
@@ -487,7 +487,7 @@ export function CvLayoutRenderer({ layout, model }) {
                             onChange={(val) => {
                               const newItems = [...rawItems];
                               newItems[itemIdx] = val;
-                              updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
+                              updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join('; '));
                             }}
                             placeholder="Skill"
                           />
@@ -502,8 +502,8 @@ export function CvLayoutRenderer({ layout, model }) {
                   <EditableText
                     value={rawItems.join(' · ')}
                     onChange={(val) => {
-                      const items = val.split(/[·,]/).map((x) => x.trim()).filter(Boolean);
-                      updateSkillCategory(sectionId, catIndex, 'itemsText', items.join(', '));
+                      const items = val.split(/[·;]/).map((x) => x.trim()).filter(Boolean);
+                      updateSkillCategory(sectionId, catIndex, 'itemsText', items.join('; '));
                     }}
                     placeholder="Skill 1 · Skill 2 · Skill 3"
                   />
@@ -517,7 +517,7 @@ export function CvLayoutRenderer({ layout, model }) {
                         onChange={(val) => {
                           const newItems = [...rawItems];
                           newItems[itemIdx] = val;
-                          updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
+                          updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join('; '));
                         }}
                         placeholder="Skill"
                       />
