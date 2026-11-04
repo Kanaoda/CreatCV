@@ -33,14 +33,12 @@ export function parseSkillItemsText(text) {
 }
 
 /**
- * Normalize to semicolon-separated `itemsText`.
- * Legacy comma-only strings (no `;`) are migrated once on load.
+ * Normalize `itemsText` using `;` only as the tag separator.
+ * Commas stay inside a tag (e.g. "Slack, MS Office, Teams" = one line).
  */
 export function normalizeSkillItemsText(itemsText, items) {
   if (itemsText != null && String(itemsText).trim() !== '') {
-    const raw = String(itemsText);
-    if (raw.includes(';')) return formatSkillItemsText(parseSkillItemsText(raw));
-    return formatSkillItemsText(raw.split(',').map((s) => s.trim()).filter(Boolean));
+    return formatSkillItemsText(parseSkillItemsText(itemsText));
   }
   return formatSkillItemsText(items || []);
 }
