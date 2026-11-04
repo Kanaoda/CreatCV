@@ -107,7 +107,7 @@
             "Skill two",
             "Skill three"
           ],
-          "itemsText": "Skill one, Skill two, Skill three",
+          "itemsText": "Skill one; Skill two; Skill three",
           "visible": true
         }
       ]
@@ -125,7 +125,7 @@
             "Tool B",
             "Tool C"
           ],
-          "itemsText": "Tool A, Tool B, Tool C",
+          "itemsText": "Tool A; Tool B; Tool C",
           "visible": true
         }
       ]

@@ -1,4 +1,8 @@
 import { visibleItems } from './visibility.js';
+import {
+  normalizeSkillItemsText,
+  parseSkillItemsText,
+} from './cvPreview/helpers.js';
 
 /** Stable default skill-section ids (also used in layout sidebarOrder) */
 export const SKILL_SECTION_CORE = 'coreCompetencies';
@@ -46,11 +50,8 @@ export function createEmptySkillSection(title = 'New Section', idSuffix = Date.n
 }
 
 function normalizeCategoryShape(cat, i, idPrefix) {
-  const itemsText = cat.itemsText ?? (cat.items || []).join(', ');
-  const items = String(itemsText)
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const itemsText = normalizeSkillItemsText(cat.itemsText, cat.items);
+  const items = parseSkillItemsText(itemsText);
   return {
     ...cat,
     id: cat.id || `${idPrefix}_${i}`,
@@ -310,8 +311,8 @@ export function getVisibleSkillCategories(section) {
 
 export function sectionHasVisibleContent(section) {
   return getVisibleSkillCategories(section).some((cat) => {
-    const text = cat.itemsText ?? (cat.items || []).join(', ');
-    return String(text).split(',').some((t) => t.trim());
+    const text = normalizeSkillItemsText(cat.itemsText, cat.items);
+    return parseSkillItemsText(text).length > 0;
   });
 }
 

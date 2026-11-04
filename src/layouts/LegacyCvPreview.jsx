@@ -109,7 +109,7 @@ export function LegacyCvPreview({ model }) {
                               onChange={(val) => {
                                 const newItems = [...rawItems];
                                 newItems[itemIdx] = val;
-                                updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
+                                updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join('; '));
                               }}
                               placeholder="Skill"
                             />
@@ -125,7 +125,7 @@ export function LegacyCvPreview({ model }) {
                             onChange={(val) => {
                               const newItems = [...rawItems];
                               newItems[itemIdx] = val;
-                              updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
+                              updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join('; '));
                             }}
                             placeholder="Skill"
                           />
@@ -144,7 +144,7 @@ export function LegacyCvPreview({ model }) {
                         onChange={(val) => {
                           const newItems = [...rawItems];
                           newItems[itemIdx] = val;
-                          updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join(', '));
+                          updateSkillCategory(sectionId, catIndex, 'itemsText', newItems.join('; '));
                         }}
                         placeholder="Skill"
                       />
