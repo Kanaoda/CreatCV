@@ -13,7 +13,8 @@
   <a href="https://kanaoda.github.io/CreatCV/">Live demo</a> ·
   <a href="https://github.com/Kanaoda/CreatCV">GitHub</a> ·
   <a href="https://buymeacoffee.com/kanaoda">Buy Me a Coffee</a> ·
-  <a href="https://github.com/sponsors/Kanaoda">Sponsors</a>
+  <a href="https://github.com/sponsors/Kanaoda">GitHub Sponsors</a> ·
+  <a href="https://payme.hsbc/kanaoda">PayMe</a>
 </p>
 
 ---
@@ -78,6 +79,7 @@ If CreatCV helps you, you can support development:
 
 - [Buy Me a Coffee](https://buymeacoffee.com/kanaoda)
 - [GitHub Sponsors](https://github.com/sponsors/Kanaoda)
+- [PayMe](https://payme.hsbc/kanaoda)
 
 ---
 
