@@ -42,7 +42,15 @@ export function listTemplates({ group } = {}) {
 }
 
 export function listTemplateOptions() {
-  return listTemplates().map((t) => ({ id: t.id, name: t.name, group: t.group }));
+  return listTemplates().map((t) => ({
+    id: t.id,
+    name: t.name,
+    group: t.group,
+    layoutFamily: t.layoutFamily || '',
+    primary: t.theme?.primary || t.theme?.sidebarPrimary || '#1e293b',
+    accent: t.theme?.accent || '#2563eb',
+    paper: t.theme?.bg || '#ffffff',
+  }));
 }
 
 export function hasTemplate(id) {

@@ -80,7 +80,7 @@ export function LegacyCvPreview({ model }) {
       || visibleCats.some((c) => c.category && !/^\[.*\]$/.test(String(c.category).trim()));
 
     return (
-      <div className="cv-sidebar-section cv-skills-section">
+      <div className="cv-sidebar-section cv-skills-section" data-cv-anchor={`skills:${sectionId}`}>
         <div className="sidebar-section-title">{section.title || 'Skills'}</div>
         {visibleCats.map((skillCat) => {
           const catIndex = (section.categories || []).findIndex((c) => c.id === skillCat.id);
@@ -173,7 +173,7 @@ export function LegacyCvPreview({ model }) {
 
   return (
     <>
-      <div className="cv-header">
+      <div className="cv-header" data-cv-anchor="personal">
         <div style={{ flexGrow: 1 }}>
           <h2>
             <EditableText
@@ -246,7 +246,7 @@ export function LegacyCvPreview({ model }) {
             if (key === 'languages') {
               return (
                 isSectionVisible(data.sections, 'languages') && visibleLanguages.length > 0 && (
-                  <div key={key} className="cv-sidebar-section cv-languages-section">
+                  <div key={key} className="cv-sidebar-section cv-languages-section" data-cv-anchor="languages">
                     <div className="sidebar-section-title">Languages</div>
                     <div className={template.singleColumn ? 'cv-languages-grid' : 'cv-languages-list'}>
                       {visibleLanguages.map((lang, idx) => (
@@ -274,7 +274,7 @@ export function LegacyCvPreview({ model }) {
             if (key === 'certifications') {
               return (
                 isSectionVisible(data.sections, 'certifications') && visibleCerts.length > 0 && (
-                  <div key={key} className="cv-sidebar-section cv-certs-section">
+                  <div key={key} className="cv-sidebar-section cv-certs-section" data-cv-anchor="certifications">
                     <div className="sidebar-section-title">Certifications</div>
                     {visibleCerts.map((cert, idx) => renderCertEntry(cert, idx))}
                   </div>
@@ -284,7 +284,7 @@ export function LegacyCvPreview({ model }) {
             return <React.Fragment key={key}>{renderLegacySkillSection(key)}</React.Fragment>;
           })}
           {isSectionVisible(data.sections, 'sabbatical') && data.sabbatical?.enabled && (
-            <div className="sabbatical-box">
+            <div className="sabbatical-box" data-cv-anchor="sabbatical">
               <strong>Notes:</strong>
               <ul style={{ marginLeft: '12px', marginTop: '4px', listStyleType: 'circle' }}>
                 {data.sabbatical.bullets.map((b, idx) => (
@@ -303,7 +303,7 @@ export function LegacyCvPreview({ model }) {
 
         <div className="cv-main-col">
           {isSectionVisible(data.sections, 'profile') && data.personal.summary && (
-            <div className="cv-section cv-profile-section">
+            <div className="cv-section cv-profile-section" data-cv-anchor="profile">
               <div className="cv-section-title">Profile</div>
               <ul className="emp-bullets cv-profile-bullets">
                 {getProfilePoints(data.personal.summary).map((para, idx) => {
@@ -327,14 +327,14 @@ export function LegacyCvPreview({ model }) {
             </div>
           )}
           {isSectionVisible(data.sections, 'employment') && visibleEmployment.length > 0 && (
-            <div className="cv-section">
+            <div className="cv-section" data-cv-anchor="employment">
               <div className="cv-section-title">Employment History</div>
               {visibleEmployment.map((emp) => {
                 const empBullets = visibleBullets(emp.bullets);
                 const bulletsForView = isConciseView(viewMode) ? empBullets.slice(0, 3) : empBullets;
                 const empProjects = visibleItems(emp.projects || []);
                 return (
-                  <div key={emp.id} className="emp-block">
+                  <div key={emp.id} className="emp-block" data-cv-anchor={`employment:${emp.id}`}>
                     <div className="emp-header-row">
                       <span
                         className="emp-company"
@@ -497,12 +497,12 @@ export function LegacyCvPreview({ model }) {
             </div>
           )}
           {isSectionVisible(data.sections, 'education') && visibleEducation.length > 0 && (
-            <div className="cv-section">
+            <div className="cv-section" data-cv-anchor="education">
               <div className="cv-section-title">Education</div>
               {visibleEducation.map((edu, idx) => {
                 const eduBullets = visibleBullets(edu.bullets);
                 return (
-                  <div key={edu.id || idx} className="cv-education-block">
+                  <div key={edu.id || idx} className="cv-education-block" data-cv-anchor={`education:${edu.id || idx}`}>
                     <div className="cv-split-row cv-education-degree">
                       <span>
                         <EditableText
@@ -560,7 +560,7 @@ export function LegacyCvPreview({ model }) {
             </div>
           )}
           {isSectionVisible(data.sections, 'references') && visibleReferences.length > 0 && (
-            <div className="cv-section cv-references-section">
+            <div className="cv-section cv-references-section" data-cv-anchor="references">
               <div className="cv-section-title">References</div>
               {visibleReferences.map((ref) => (
                 <div key={ref.id} className="cv-reference-entry">
@@ -578,7 +578,7 @@ export function LegacyCvPreview({ model }) {
             </div>
           )}
           {showAvailabilitySection && (
-            <div className="cv-section cv-availability-section">
+            <div className="cv-section cv-availability-section" data-cv-anchor="availability">
               <div className="cv-section-title">Availability</div>
               <ul className="emp-bullets cv-availability-list">
                 {AVAILABILITY_FIELD_DEFS.map((field) => (

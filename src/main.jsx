@@ -7,7 +7,6 @@ import { reorderArray, useSortableList, SortableToolbar } from './useSortableLis
 import { useResumeState } from './useResumeState';
 import { DEFAULT_TEMPLATE_FILENAME, loadDefaultTemplate } from './resumeDefaults';
 import {
-  listTemplateOptions,
   resolveTemplate,
   readTemplateIdFromSettings,
   buildAppSettingsExport,
@@ -26,6 +25,15 @@ import { getSkillEntries, normalizeSkillItemRatings } from './cvPreview/skillRat
 import './layouts/layouts.css';
 import { CreatCvLogo } from './CreatCvLogo';
 import { CreatCvWordmark } from './CreatCvWordmark';
+import { TemplatePicker } from './TemplatePicker.jsx';
+import { computeA4BreakOffsetsPx } from './pageBreakEstimate.js';
+import {
+  applyCvAnchorHighlights,
+  editorTargetForAnchor,
+  isCvInteractiveTarget,
+  readAnchorFromEventTarget,
+  resolveAnchorAtPoint,
+} from './cvAnchorSync.js';
 import {
   formatPhotoSizeLabel,
   optimizePhotoDataUrl,
@@ -216,31 +224,75 @@ const PREVIEW_ZOOM_MAX = 1;
 const PREVIEW_ZOOM_STEP = 0.01; // slider: 1%
 const PREVIEW_ZOOM_BUTTON_STEP = 0.05; // +/- buttons: 5%
 
+/** Cross-tab jump targets inside .editor-sections-scroll */
+const EDITOR_JUMP_LINKS = [
+  { tab: 'personal', id: 'editor-personal', label: 'Personal' },
+  { tab: 'personal', id: 'editor-fine-tune', label: 'Design' },
+  { tab: 'employment', id: 'editor-employment', label: 'Work' },
+  { tab: 'skills', id: 'editor-skills-display', label: 'Skills' },
+  { tab: 'skills', id: 'editor-languages', label: 'Lang' },
+  { tab: 'other', id: 'editor-education', label: 'Edu' },
+  { tab: 'other', id: 'editor-certs', label: 'Certs' },
+  { tab: 'other', id: 'editor-references', label: 'Refs' },
+];
+
 function readStoredPreviewZoom() {
   try {
     const raw = localStorage.getItem(PREVIEW_ZOOM_KEY);
+    if (raw == null || raw === '') return null;
     const n = Number(raw);
     if (Number.isFinite(n) && n >= PREVIEW_ZOOM_MIN && n <= PREVIEW_ZOOM_MAX) return n;
   } catch {
     /* ignore */
   }
-  if (typeof window !== 'undefined' && window.innerWidth < 1700) return 0.72;
-  return 1;
+  return null;
+}
+
+function measureCssMmWidth(mm) {
+  if (typeof document === 'undefined') return (mm * 96) / 25.4;
+  const el = document.createElement('div');
+  el.style.cssText = `position:absolute;left:-9999px;top:0;width:${mm}mm;height:1px;pointer-events:none;visibility:hidden`;
+  document.body.appendChild(el);
+  const w = el.offsetWidth;
+  document.body.removeChild(el);
+  return w || (mm * 96) / 25.4;
+}
+
+function clampPreviewZoomValue(z) {
+  const n = Number(z);
+  if (!Number.isFinite(n)) return PREVIEW_ZOOM_MAX;
+  return Math.min(PREVIEW_ZOOM_MAX, Math.max(PREVIEW_ZOOM_MIN, Math.round(n * 100) / 100));
+}
+
+/** Fit A4 page into the preview panel’s content box (screen only). */
+function computeFitPreviewZoom(panelEl) {
+  if (!panelEl) return PREVIEW_ZOOM_MAX;
+  const style = getComputedStyle(panelEl);
+  const padL = parseFloat(style.paddingLeft) || 0;
+  const padR = parseFloat(style.paddingRight) || 0;
+  const available = Math.max(0, panelEl.clientWidth - padL - padR);
+  const a4 = measureCssMmWidth(210);
+  if (available < 40 || a4 < 40) return 0.72;
+  return clampPreviewZoomValue((available * 0.96) / a4);
 }
 
 function App() {
-  const [previewZoom, setPreviewZoom] = useState(readStoredPreviewZoom);
+  const storedZoomOnLoad = readStoredPreviewZoom();
+  const [previewZoom, setPreviewZoom] = useState(() => storedZoomOnLoad ?? 0.72);
   const [zoomDraft, setZoomDraft] = useState(null); // while dragging slider — keeps thumb stable
   const [previewNaturalHeight, setPreviewNaturalHeight] = useState(0);
+  const previewPanelRef = useRef(null);
   const previewScaleRef = useRef(null);
   const zoomDraggingRef = useRef(false);
   const zoomRafRef = useRef(0);
+  const hadStoredZoomRef = useRef(storedZoomOnLoad != null);
+  const pendingEditorJumpRef = useRef(null);
+  const [hoverAnchor, setHoverAnchor] = useState(null);
+  const [pageBreakOffsets, setPageBreakOffsets] = useState([]);
+  const editorScrollRef = useRef(null);
+  const cvPageRef = useRef(null);
 
-  const clampPreviewZoom = (z) => {
-    const n = Number(z);
-    if (!Number.isFinite(n)) return PREVIEW_ZOOM_MAX;
-    return Math.min(PREVIEW_ZOOM_MAX, Math.max(PREVIEW_ZOOM_MIN, Number(n.toFixed(2))));
-  };
+  const clampPreviewZoom = clampPreviewZoomValue;
 
   const displayZoom = zoomDraft ?? previewZoom;
 
@@ -259,6 +311,20 @@ function App() {
   const commitPreviewZoom = (z) => {
     setPreviewZoom(clampPreviewZoom(z));
   };
+
+  const fitPreviewToPanel = () => {
+    if (zoomDraggingRef.current) return;
+    setZoomDraft(null);
+    commitPreviewZoom(computeFitPreviewZoom(previewPanelRef.current));
+  };
+
+  // First visit (no saved zoom): auto-fit to the preview panel width.
+  useLayoutEffect(() => {
+    if (hadStoredZoomRef.current) return;
+    const panel = previewPanelRef.current;
+    if (!panel) return;
+    commitPreviewZoom(computeFitPreviewZoom(panel));
+  }, []);
 
   const nudgePreviewZoom = (delta) => {
     if (zoomDraggingRef.current) return;
@@ -381,11 +447,46 @@ function App() {
     buildExportPayload,
     applyImportedPayload,
     resetToDefaultTemplate,
+    clearResumeToBlank,
     exportJSON,
     importJSON,
     handlePrint,
     handleWordExport,
   } = useResumeState(normalizeResumeData);
+
+  const scrollEditorToPending = () => {
+    const pending = pendingEditorJumpRef.current;
+    if (!pending) return;
+    pendingEditorJumpRef.current = null;
+    const byAnchor = pending.anchor
+      ? document.querySelector(`.editor-panel [data-cv-anchor="${CSS.escape(pending.anchor)}"]`)
+      : null;
+    const el = byAnchor || (pending.elementId ? document.getElementById(pending.elementId) : null);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const jumpToEditorSection = (tab, id, anchor = null) => {
+    pendingEditorJumpRef.current = { elementId: id, anchor };
+    if (activeTab === tab) {
+      scrollEditorToPending();
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  const jumpToEditorForAnchor = (anchor) => {
+    const target = editorTargetForAnchor(anchor);
+    if (!target) return;
+    jumpToEditorSection(target.tab, target.elementId, target.anchor);
+  };
+
+  useEffect(() => {
+    if (!pendingEditorJumpRef.current) return undefined;
+    const timer = window.setTimeout(() => {
+      scrollEditorToPending();
+    }, 40);
+    return () => window.clearTimeout(timer);
+  }, [activeTab]);
 
   useLayoutEffect(() => {
     const el = previewScaleRef.current;
@@ -548,16 +649,74 @@ function App() {
     fontSize: fontSizeRatio,
   };
 
-  // Dynamic A4 Page Break Calculations (based on 15mm page margin printable ratio: 267mm/210mm = 1.2714)
-  const singlePageHeight = pageWidth * 1.2714;
-  const totalPages = Math.ceil(pageHeight / singlePageHeight) || 1;
-  const dividers = [];
-  for (let i = 1; i < totalPages; i++) {
-    dividers.push(Math.round(singlePageHeight * i));
-  }
+  useEffect(() => {
+    applyCvAnchorHighlights(hoverAnchor);
+  }, [hoverAnchor, activeTab, templateId, viewMode, data]);
+
+  useLayoutEffect(() => {
+    const pageEl = cvPageRef.current || document.querySelector('.cv-page');
+    if (!pageEl) {
+      setPageBreakOffsets([]);
+      return undefined;
+    }
+    const updateBreaks = () => setPageBreakOffsets(computeA4BreakOffsetsPx(pageEl));
+    updateBreaks();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver(() => {
+      updateBreaks();
+    });
+    ro.observe(pageEl);
+    return () => ro.disconnect();
+  }, [previewZoom, templateId, viewMode, data, fontSizeRatio, spacingFactor, sidebarSpacingFactor, showSkillRatings, paperTexture]);
+
+  const onEditorAnchorOver = (event) => {
+    const next = readAnchorFromEventTarget(event.target, event.currentTarget);
+    if (next) setHoverAnchor(next);
+  };
+
+  const onEditorAnchorOut = (event) => {
+    const root = event.currentTarget;
+    const related = event.relatedTarget;
+    if (related && root.contains(related)) {
+      setHoverAnchor(readAnchorFromEventTarget(related, root));
+      return;
+    }
+    setHoverAnchor(null);
+  };
+
+  const onPreviewAnchorOver = (event) => {
+    const root = event.currentTarget;
+    const next = resolveAnchorAtPoint(event.clientX, event.clientY, root)
+      || readAnchorFromEventTarget(event.target, root);
+    if (next) setHoverAnchor(next);
+  };
+
+  const onPreviewAnchorOut = (event) => {
+    const root = event.currentTarget;
+    const related = event.relatedTarget;
+    if (related && root.contains(related)) {
+      const next = resolveAnchorAtPoint(event.clientX, event.clientY, root)
+        || readAnchorFromEventTarget(related, root);
+      setHoverAnchor(next);
+      return;
+    }
+    setHoverAnchor(null);
+  };
+
+  /** Click empty CV chrome → jump to matching left editor (skip editable text / links). */
+  const onPreviewAnchorClick = (event) => {
+    if (event.button !== 0) return;
+    if (isCvInteractiveTarget(event.target)) return;
+    const root = event.currentTarget;
+    const anchor = resolveAnchorAtPoint(event.clientX, event.clientY, root);
+    if (!anchor) return;
+    event.preventDefault();
+    setHoverAnchor(anchor);
+    jumpToEditorForAnchor(anchor);
+  };
 
   return (
-    <div className="app-container">
+    <div className={`app-container${hoverAnchor ? ' is-cv-syncing' : ''}`} data-cv-hover={hoverAnchor || undefined}>
       {/* LEFT: Editor Console */}
       <div className="editor-panel">
         <div className="editor-header">
@@ -577,8 +736,21 @@ function App() {
               Load JSON
               <input type="file" accept=".json" onChange={importJSON} style={{ position: 'absolute', opacity: 0, right: 0, top: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
             </label>
-            <button type="button" className="btn" onClick={resetToDefaultTemplate} title="Reset to starter template">
-              Reset to Template
+            <button
+              type="button"
+              className="btn"
+              onClick={resetToDefaultTemplate}
+              title="Load the demo / starter CV with placeholders"
+            >
+              Load Demo
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={clearResumeToBlank}
+              title="Clear all fields to a blank CV form"
+            >
+              Clear
             </button>
           </div>
 
@@ -596,13 +768,34 @@ function App() {
             </button>
             <button className={`tab-btn ${activeTab === 'other' ? 'active' : ''}`} onClick={() => setActiveTab('other')}>Other</button>
           </div>
+
+          <nav className="editor-jump-nav" aria-label="Jump to editor section">
+            {EDITOR_JUMP_LINKS.map((link) => (
+              <button
+                key={link.id}
+                type="button"
+                className={`editor-jump-nav__btn${activeTab === link.tab ? ' is-current-tab' : ''}`}
+                onClick={() => jumpToEditorSection(link.tab, link.id)}
+              >
+                {link.label}
+              </button>
+            ))}
+          </nav>
+          <p className="editor-storage-hint">
+            Not auto-saved — use Save JSON to keep a copy. Load Demo restores placeholders; Clear blanks the form.
+          </p>
         </div>
 
-        <div className="editor-sections-scroll">
+        <div
+          className="editor-sections-scroll"
+          ref={editorScrollRef}
+          onMouseOver={onEditorAnchorOver}
+          onMouseOut={onEditorAnchorOut}
+        >
           {/* TAB 1: Profile & Contact */}
           {activeTab === 'personal' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div className="section-card section-visibility-card">
+              <div id="editor-cv-sections" className="section-card section-visibility-card">
                 <h2 style={{ marginTop: 0 }}>CV Sections</h2>
                 <p className="sortable-list-hint" style={{ marginTop: 0 }}>
                   Turn sections off to tailor each export — content stays in your JSON and editor.
@@ -647,130 +840,7 @@ function App() {
                   })}
                 </div>
               </div>
-              {/* Canva-like Fine Tuning panel */}
-              <div className="section-card" style={{ borderLeft: '3px solid var(--accent-ui)' }}>
-                <h2 style={{ fontSize: '0.85rem', color: '#a5b4fc', marginBottom: '12px', fontWeight: 800 }}>🎨 Canva Fine-Tuning Controls</h2>
-                <div className="fine-tune-controls-grid">
-                  <div className="form-group fine-tune-slider-group">
-                    <div className="fine-tune-slider-head">
-                      <label htmlFor="typo-scale-range">Typography Scale</label>
-                      <span className="fine-tune-slider-value">{typoScaleLabel(fontSizeRatio)}</span>
-                    </div>
-                    <input
-                      id="typo-scale-range"
-                      type="range"
-                      className="fine-tune-range"
-                      min={TYPO_SCALE_MIN}
-                      max={TYPO_SCALE_MAX}
-                      step={TYPO_SCALE_STEP}
-                      value={parseTypoPercent(fontSizeRatio)}
-                      onChange={(e) => setFontSizeRatio(formatTypoPercent(e.target.value))}
-                      aria-valuemin={TYPO_SCALE_MIN}
-                      aria-valuemax={TYPO_SCALE_MAX}
-                      aria-valuenow={parseTypoPercent(fontSizeRatio)}
-                      aria-valuetext={typoScaleLabel(fontSizeRatio)}
-                    />
-                    <div className="fine-tune-range-ticks" aria-hidden="true">
-                      <span>{TYPO_SCALE_MIN}%</span>
-                      <span>100%</span>
-                      <span>{TYPO_SCALE_MAX}%</span>
-                    </div>
-                  </div>
-                  <div className="form-group fine-tune-slider-group">
-                    <div className="fine-tune-slider-head">
-                      <label htmlFor="line-spacing-range">Line Spacing</label>
-                      <span className="fine-tune-slider-value">{lineSpacingLabel(spacingFactor)}</span>
-                    </div>
-                    <input
-                      id="line-spacing-range"
-                      type="range"
-                      className="fine-tune-range"
-                      min={LINE_SPACING_MIN}
-                      max={LINE_SPACING_MAX}
-                      step={LINE_SPACING_STEP}
-                      value={parseSpacingFactor(spacingFactor)}
-                      onChange={(e) => setSpacingFactor(formatSpacingFactor(e.target.value))}
-                      aria-valuemin={LINE_SPACING_MIN}
-                      aria-valuemax={LINE_SPACING_MAX}
-                      aria-valuenow={parseSpacingFactor(spacingFactor)}
-                      aria-valuetext={lineSpacingLabel(spacingFactor)}
-                    />
-                    <div className="fine-tune-range-ticks" aria-hidden="true">
-                      <span>{LINE_SPACING_MIN}</span>
-                      <span>1.0</span>
-                      <span>{LINE_SPACING_MAX}</span>
-                    </div>
-                  </div>
-                  <div className="form-group fine-tune-slider-group">
-                    <div className="fine-tune-slider-head">
-                      <label htmlFor="sidebar-spacing-range">Sidebar Spacing</label>
-                      <span className="fine-tune-slider-value">{lineSpacingLabel(sidebarSpacingFactor)}</span>
-                    </div>
-                    <input
-                      id="sidebar-spacing-range"
-                      type="range"
-                      className="fine-tune-range"
-                      min={LINE_SPACING_MIN}
-                      max={LINE_SPACING_MAX}
-                      step={LINE_SPACING_STEP}
-                      value={parseSpacingFactor(sidebarSpacingFactor)}
-                      onChange={(e) => setSidebarSpacingFactor(formatSpacingFactor(e.target.value))}
-                      aria-valuemin={LINE_SPACING_MIN}
-                      aria-valuemax={LINE_SPACING_MAX}
-                      aria-valuenow={parseSpacingFactor(sidebarSpacingFactor)}
-                      aria-valuetext={lineSpacingLabel(sidebarSpacingFactor)}
-                    />
-                    <div className="fine-tune-range-ticks" aria-hidden="true">
-                      <span>{LINE_SPACING_MIN}</span>
-                      <span>1.0</span>
-                      <span>{LINE_SPACING_MAX}</span>
-                    </div>
-                  </div>
-                  <div className="form-group fine-tune-texture-group">
-                    <label htmlFor="paper-texture-select">Paper Texture</label>
-                    <select
-                      id="paper-texture-select"
-                      value={paperTexture}
-                      onChange={(e) => setPaperTexture(e.target.value)}
-                    >
-                      <option value="none">Smooth Matte</option>
-                      <option value="oatmeal-fiber">Oatmeal Fiber</option>
-                      <option value="grid-blueprint">Grid Blueprint</option>
-                      <option value="linear-corduroy">Linear Corduroy</option>
-                    </select>
-                  </div>
-                </div>
-
-                <h3 style={{ fontSize: '0.78rem', color: '#a5b4fc', marginBottom: '8px', fontWeight: 700 }}>Custom Palette Overrides</h3>
-                <p className="sortable-list-hint" style={{ marginTop: 0, marginBottom: '10px' }}>Each control maps to one element only. Per-job Job Title override: Work tab.</p>
-
-                {CV_COLOR_GROUPS.map((group) => (
-                  <div key={group.id}>
-                    <p className="color-group-label">{group.label}</p>
-                    <div className={`color-picker-grid${group.fields.length <= 2 ? ' color-picker-grid--pair' : ''}`}>
-                      {group.fields.map((field) => (
-                        <div key={field.key} className="form-group" style={{ marginBottom: 0 }}>
-                          <label style={{ fontSize: '0.7rem' }}>{field.label}</label>
-                          <input
-                            type="color"
-                            value={colorOverrides[field.key] || field.default}
-                            onChange={(e) => setColorOverride(field.key, e.target.value)}
-                            style={{ padding: '2px', height: '32px', cursor: 'pointer', width: '100%' }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
-                {hasAnyColorOverride(colorOverrides) && (
-                  <button className="btn btn-danger" style={{ marginTop: '12px', width: '100%', padding: '4px' }} onClick={resetColorOverrides}>
-                    Reset Color Overrides to Preset Default
-                  </button>
-                )}
-              </div>
-
-              <div className="section-card">
+              <div id="editor-personal" className="section-card" data-cv-anchor="personal">
                 <div className="section-title-bar">
                   <h2>Personal Information</h2>
                 </div>
@@ -918,12 +988,139 @@ function App() {
                   </button>
                 </div>
               </div>
+
+              <details id="editor-fine-tune" className="section-card editor-advanced-details">
+                <summary className="editor-advanced-summary">
+                  <span className="editor-advanced-summary__title">Design &amp; fine-tune</span>
+                  <span className="editor-advanced-summary__hint">Typography, spacing, palette</span>
+                </summary>
+                <div className="fine-tune-controls-grid">
+                  <div className="form-group fine-tune-slider-group">
+                    <div className="fine-tune-slider-head">
+                      <label htmlFor="typo-scale-range">Typography Scale</label>
+                      <span className="fine-tune-slider-value">{typoScaleLabel(fontSizeRatio)}</span>
+                    </div>
+                    <input
+                      id="typo-scale-range"
+                      type="range"
+                      className="fine-tune-range"
+                      min={TYPO_SCALE_MIN}
+                      max={TYPO_SCALE_MAX}
+                      step={TYPO_SCALE_STEP}
+                      value={parseTypoPercent(fontSizeRatio)}
+                      onChange={(e) => setFontSizeRatio(formatTypoPercent(e.target.value))}
+                      aria-valuemin={TYPO_SCALE_MIN}
+                      aria-valuemax={TYPO_SCALE_MAX}
+                      aria-valuenow={parseTypoPercent(fontSizeRatio)}
+                      aria-valuetext={typoScaleLabel(fontSizeRatio)}
+                    />
+                    <div className="fine-tune-range-ticks" aria-hidden="true">
+                      <span>{TYPO_SCALE_MIN}%</span>
+                      <span>100%</span>
+                      <span>{TYPO_SCALE_MAX}%</span>
+                    </div>
+                  </div>
+                  <div className="form-group fine-tune-slider-group">
+                    <div className="fine-tune-slider-head">
+                      <label htmlFor="line-spacing-range">Line Spacing</label>
+                      <span className="fine-tune-slider-value">{lineSpacingLabel(spacingFactor)}</span>
+                    </div>
+                    <input
+                      id="line-spacing-range"
+                      type="range"
+                      className="fine-tune-range"
+                      min={LINE_SPACING_MIN}
+                      max={LINE_SPACING_MAX}
+                      step={LINE_SPACING_STEP}
+                      value={parseSpacingFactor(spacingFactor)}
+                      onChange={(e) => setSpacingFactor(formatSpacingFactor(e.target.value))}
+                      aria-valuemin={LINE_SPACING_MIN}
+                      aria-valuemax={LINE_SPACING_MAX}
+                      aria-valuenow={parseSpacingFactor(spacingFactor)}
+                      aria-valuetext={lineSpacingLabel(spacingFactor)}
+                    />
+                    <div className="fine-tune-range-ticks" aria-hidden="true">
+                      <span>{LINE_SPACING_MIN}</span>
+                      <span>1.0</span>
+                      <span>{LINE_SPACING_MAX}</span>
+                    </div>
+                  </div>
+                  <div className="form-group fine-tune-slider-group">
+                    <div className="fine-tune-slider-head">
+                      <label htmlFor="sidebar-spacing-range">Sidebar Spacing</label>
+                      <span className="fine-tune-slider-value">{lineSpacingLabel(sidebarSpacingFactor)}</span>
+                    </div>
+                    <input
+                      id="sidebar-spacing-range"
+                      type="range"
+                      className="fine-tune-range"
+                      min={LINE_SPACING_MIN}
+                      max={LINE_SPACING_MAX}
+                      step={LINE_SPACING_STEP}
+                      value={parseSpacingFactor(sidebarSpacingFactor)}
+                      onChange={(e) => setSidebarSpacingFactor(formatSpacingFactor(e.target.value))}
+                      aria-valuemin={LINE_SPACING_MIN}
+                      aria-valuemax={LINE_SPACING_MAX}
+                      aria-valuenow={parseSpacingFactor(sidebarSpacingFactor)}
+                      aria-valuetext={lineSpacingLabel(sidebarSpacingFactor)}
+                    />
+                    <div className="fine-tune-range-ticks" aria-hidden="true">
+                      <span>{LINE_SPACING_MIN}</span>
+                      <span>1.0</span>
+                      <span>{LINE_SPACING_MAX}</span>
+                    </div>
+                  </div>
+                  <div className="form-group fine-tune-texture-group">
+                    <label htmlFor="paper-texture-select">Paper Texture</label>
+                    <select
+                      id="paper-texture-select"
+                      value={paperTexture}
+                      onChange={(e) => setPaperTexture(e.target.value)}
+                    >
+                      <option value="none">Smooth Matte</option>
+                      <option value="oatmeal-fiber">Oatmeal Fiber</option>
+                      <option value="grid-blueprint">Grid Blueprint</option>
+                      <option value="linear-corduroy">Linear Corduroy</option>
+                    </select>
+                  </div>
+                </div>
+
+                <h3 className="editor-advanced-subtitle">Custom Palette Overrides</h3>
+                <p className="sortable-list-hint" style={{ marginTop: 0, marginBottom: '10px' }}>
+                  Each control maps to one element only. Per-job Job Title override: Work tab.
+                </p>
+
+                {CV_COLOR_GROUPS.map((group) => (
+                  <div key={group.id}>
+                    <p className="color-group-label">{group.label}</p>
+                    <div className={`color-picker-grid${group.fields.length <= 2 ? ' color-picker-grid--pair' : ''}`}>
+                      {group.fields.map((field) => (
+                        <div key={field.key} className="form-group" style={{ marginBottom: 0 }}>
+                          <label style={{ fontSize: '0.7rem' }}>{field.label}</label>
+                          <input
+                            type="color"
+                            value={colorOverrides[field.key] || field.default}
+                            onChange={(e) => setColorOverride(field.key, e.target.value)}
+                            style={{ padding: '2px', height: '32px', cursor: 'pointer', width: '100%' }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {hasAnyColorOverride(colorOverrides) && (
+                  <button className="btn btn-danger" style={{ marginTop: '12px', width: '100%', padding: '4px' }} onClick={resetColorOverrides}>
+                    Reset Color Overrides to Preset Default
+                  </button>
+                )}
+              </details>
             </div>
           )}
 
           {/* TAB 2: Employment History & Projects */}
           {activeTab === 'employment' && (
-            <div className="section-card">
+            <div id="editor-employment" className="section-card" data-cv-anchor="employment">
               <div className="section-title-bar">
                 <h2>Work Experience</h2>
                 <button className="btn btn-primary" onClick={addEmployment}>+ Add Job</button>
@@ -933,6 +1130,7 @@ function App() {
               {data.employment.map((emp, empIdx) => (
                 <div
                   key={emp.id}
+                  data-cv-anchor={`employment:${emp.id}`}
                   className={`${sort.itemClassName('employment', empIdx)}${isVisible(emp) ? '' : ' editor-item--hidden'}`}
                   {...sort.containerProps('employment', empIdx)}
                 >
@@ -1138,7 +1336,7 @@ function App() {
           {/* TAB 3: Skills & Languages */}
           {activeTab === 'skills' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div className="section-card">
+              <div id="editor-skills-display" className="section-card" data-cv-anchor="skills">
                 <h2 style={{ marginTop: 0 }}>Skills display</h2>
                 <label className="editor-toggle-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
                   <input
@@ -1156,7 +1354,7 @@ function App() {
                 </label>
               </div>
 
-              <div className="section-card">
+              <div id="editor-sidebar-order" className="section-card">
                 <div className="section-title-bar">
                   <h2 style={{ marginTop: 0 }}>Sidebar section order</h2>
                   <button className="btn btn-primary" onClick={addSkillSection}>+ Add Section</button>
@@ -1185,7 +1383,7 @@ function App() {
               </div>
 
               {/* Languages */}
-              <div className="section-card">
+              <div id="editor-languages" className="section-card" data-cv-anchor="languages">
                 <div className="section-title-bar">
                   <h2>Languages</h2>
                   <button className="btn btn-primary" onClick={addLanguage}>+ Add Language</button>
@@ -1239,7 +1437,12 @@ function App() {
 
               {/* Skill sections + subcategories */}
               {(data.skillSections || []).map((section) => (
-                <div key={section.id} className="section-card">
+                <div
+                  key={section.id}
+                  id={`editor-skills-${section.id}`}
+                  className="section-card"
+                  data-cv-anchor={`skills:${section.id}`}
+                >
                   <div className="section-title-bar">
                     <h2>{section.title || 'Skills section'}</h2>
                     <div className="section-title-bar__actions">
@@ -1361,7 +1564,7 @@ function App() {
           {activeTab === 'other' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Certifications */}
-              <div className="section-card">
+              <div id="editor-certs" className="section-card" data-cv-anchor="certifications">
                 <div className="section-title-bar">
                   <h2>Certificates & Licenses</h2>
                   <button className="btn btn-primary" onClick={addCert}>+ Add</button>
@@ -1417,7 +1620,7 @@ function App() {
               </div>
 
               {/* Education */}
-              <div className="section-card">
+              <div id="editor-education" className="section-card" data-cv-anchor="education">
                 <div className="section-title-bar">
                   <h2>Education</h2>
                   <button className="btn btn-primary" onClick={addEducation}>+ Add Entry</button>
@@ -1427,6 +1630,7 @@ function App() {
                   {(data.education || []).map((edu, eduIdx) => (
                     <div
                       key={edu.id}
+                      data-cv-anchor={`education:${edu.id}`}
                       className={`${sort.itemClassName('education', eduIdx)}${isVisible(edu) ? '' : ' editor-item--hidden'}`}
                       {...sort.containerProps('education', eduIdx)}
                     >
@@ -1513,7 +1717,7 @@ function App() {
               </div>
 
               {/* References */}
-              <div className="section-card">
+              <div id="editor-references" className="section-card" data-cv-anchor="references">
                 <div className="section-title-bar">
                   <h2>References</h2>
                   <button className="btn btn-primary" onClick={addReference}>+ Add Contact</button>
@@ -1568,7 +1772,7 @@ function App() {
               </div>
 
               {/* Salary & availability */}
-              <div className="section-card">
+              <div id="editor-availability" className="section-card" data-cv-anchor="availability">
                 <div className="section-title-bar">
                   <h2>Expected Salary &amp; Availability</h2>
                 </div>
@@ -1604,7 +1808,7 @@ function App() {
               </div>
 
               {/* Sabbatical */}
-              <div className="section-card">
+              <div id="editor-sabbatical" className="section-card" data-cv-anchor="sabbatical">
                 <div className="section-title-bar">
                   <h2>Sabbatical & Custom Notes</h2>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -1650,7 +1854,7 @@ function App() {
       </div>
 
       {/* RIGHT: Live Preview Workspace */}
-      <div className="preview-panel">
+      <div className="preview-panel" ref={previewPanelRef}>
 
         {/* Screen-only preview scale: outer slot owns layout size; inner stays true 210mm.
             Print CSS resets transform / slot sizing so PDF matches full A4. */}
@@ -1670,6 +1874,7 @@ function App() {
             }}
           >
           <div
+            ref={cvPageRef}
             className={`cv-page ${template.layoutClass}`}
             data-template-id={template.templateId}
             data-preset={template.templateId}
@@ -1683,14 +1888,17 @@ function App() {
             data-skill-ratings={showSkillRatings ? 'on' : 'off'}
             style={cvDynamicStyles}
             data-texture={paperTexture}
+            onMouseOver={onPreviewAnchorOver}
+            onMouseOut={onPreviewAnchorOut}
+            onClick={onPreviewAnchorClick}
           >
             {/* Paper texture only when enabled — mix-blend-mode rasterizes PDF text if always mounted */}
             {paperTexture !== 'none' && <div className="cv-page-texture"></div>}
 
-            {/* Dynamic A4 Page Break Indicators (Screen-only) */}
-            {dividers.map((top, idx) => (
+            {/* Screen-only A4 breaks: 267mm printable (A4 − 15mm×2), measured in real CSS mm */}
+            {pageBreakOffsets.map((top, idx) => (
               <div key={idx} className="page-break-indicator" style={{ top: `${top}px` }}>
-                <span>A4 PAGE {idx + 1} BREAK (ESTIMATE)</span>
+                <span>A4 PAGE {idx + 1} BREAK · 267mm</span>
               </div>
             ))}
 
@@ -1803,14 +2011,18 @@ function App() {
         {/* Floating Control Card (Bottom-Right overlay) */}
         <div className="floating-control-card">
           <div className="control-field control-field--zoom">
-            <label htmlFor="cv-preview-zoom">Preview zoom</label>
-            <div className="preview-zoom-controls">
+            <label id="cv-preview-zoom-label" htmlFor="cv-preview-zoom">Preview zoom</label>
+            <div
+              className="preview-zoom-controls"
+              role="group"
+              aria-labelledby="cv-preview-zoom-label"
+            >
               <button
                 type="button"
                 className="btn preview-zoom-btn"
                 onClick={() => nudgePreviewZoom(-PREVIEW_ZOOM_BUTTON_STEP)}
                 title="Zoom out 5%"
-                aria-label="Zoom out preview"
+                aria-label="Zoom out preview by 5 percent"
               >
                 −
               </button>
@@ -1822,6 +2034,10 @@ function App() {
                 max={PREVIEW_ZOOM_MAX * 100}
                 step={PREVIEW_ZOOM_STEP * 100}
                 value={Math.round(displayZoom * 100)}
+                aria-valuemin={PREVIEW_ZOOM_MIN * 100}
+                aria-valuemax={PREVIEW_ZOOM_MAX * 100}
+                aria-valuenow={Math.round(displayZoom * 100)}
+                aria-valuetext={`${Math.round(displayZoom * 100)} percent`}
                 onPointerDown={onZoomPointerDown}
                 onPointerUp={onZoomPointerUp}
                 onPointerCancel={onZoomPointerUp}
@@ -1834,7 +2050,7 @@ function App() {
                 className="btn preview-zoom-btn"
                 onClick={() => nudgePreviewZoom(PREVIEW_ZOOM_BUTTON_STEP)}
                 title="Zoom in 5%"
-                aria-label="Zoom in preview"
+                aria-label="Zoom in preview by 5 percent"
               >
                 +
               </button>
@@ -1847,25 +2063,26 @@ function App() {
                   commitPreviewZoom(1);
                 }}
                 title="Reset preview to 100%"
+                aria-label={`Preview zoom ${Math.round(displayZoom * 100)} percent, reset to 100 percent`}
               >
                 {Math.round(displayZoom * 100)}%
               </button>
             </div>
-            <p className="preview-zoom-hint">Screen only · print/PDF unchanged</p>
+            <div className="preview-zoom-meta">
+              <p className="preview-zoom-hint">Screen only · print/PDF unchanged</p>
+              <button
+                type="button"
+                className="preview-zoom-fit"
+                onClick={fitPreviewToPanel}
+                title="Fit A4 preview to the available panel width"
+                aria-label="Fit preview to panel width"
+              >
+                Fit
+              </button>
+            </div>
           </div>
           <div className="control-field control-field--preset">
-            <label htmlFor="cv-template-select">Template</label>
-            <select
-              id="cv-template-select"
-              className="control-select control-select--accent"
-              value={templateId}
-              title={listTemplateOptions().find((p) => p.id === templateId)?.name || 'Template'}
-              onChange={(e) => setTemplateId(e.target.value)}
-            >
-              {listTemplateOptions().map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <TemplatePicker value={templateId} onChange={setTemplateId} />
           </div>
           <div className="control-field control-field--format">
             <label htmlFor="cv-format-select">Output Format</label>
@@ -1915,6 +2132,10 @@ function App() {
               Word
             </button>
           </div>
+          <p className="export-hint">
+            PDF / 1-Page: Chrome or Edge → Save as PDF · Margins: None · turn off headers/footers.
+            Word downloads a .docx you can edit.
+          </p>
         </div>
       </div>
     </div>

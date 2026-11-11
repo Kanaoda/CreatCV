@@ -177,7 +177,7 @@ export function CvLayoutRenderer({ layout, model }) {
     const h = layout.header;
     if (h === 'centered') {
       return (
-        <div className="cv-header cv-header--layout-centered">
+        <div className="cv-header cv-header--layout-centered" data-cv-anchor="personal">
           {showHeroPhoto() && data.personal.photo ? (
             <img src={data.personal.photo} alt={data.personal.name} className={getPhotoClassName('header')} />
           ) : renderPhotoPlaceholder('hero')}
@@ -201,7 +201,7 @@ export function CvLayoutRenderer({ layout, model }) {
     }
     if (h === 'band' || h === 'dark-band') {
       return (
-        <div className={`cv-header cv-header--layout-${h}`}>
+        <div className={`cv-header cv-header--layout-${h}`} data-cv-anchor="personal">
           <div className="cv-header-band-inner">
             <h2>
               <EditableText
@@ -227,7 +227,7 @@ export function CvLayoutRenderer({ layout, model }) {
     }
     if (h === 'hero-card') {
       return (
-        <div className="cv-header cv-header--layout-hero-card">
+        <div className="cv-header cv-header--layout-hero-card" data-cv-anchor="personal">
           <div className="cv-hero-card-row">
             {(showHeaderPhoto() || layout.photo === 'header') && (
               <div className="cv-hero-card-photo">
@@ -270,7 +270,7 @@ export function CvLayoutRenderer({ layout, model }) {
     }
     if (h === 'split') {
       return (
-        <div className="cv-header cv-header--layout-split">
+        <div className="cv-header cv-header--layout-split" data-cv-anchor="personal">
           <div style={{ flexGrow: 1 }}>
             <h2>
               <EditableText
@@ -295,7 +295,7 @@ export function CvLayoutRenderer({ layout, model }) {
     }
     if (h === 'minimal') {
       return (
-        <div className="cv-header cv-header--layout-minimal">
+        <div className="cv-header cv-header--layout-minimal" data-cv-anchor="personal">
           <h2>
             <EditableText
               value={data.personal.name}
@@ -327,7 +327,7 @@ export function CvLayoutRenderer({ layout, model }) {
       );
     }
     return (
-      <div className="cv-header cv-header--layout-standard">
+      <div className="cv-header cv-header--layout-standard" data-cv-anchor="personal">
         <div style={{ flexGrow: 1 }}>
           <h2>
             <EditableText
@@ -407,7 +407,10 @@ export function CvLayoutRenderer({ layout, model }) {
     if (!isSectionVisible(data.sections, 'languages') || visibleLanguages.length === 0) return null;
     const isSide = zone === 'sidebar';
     return (
-      <div className={`cv-section cv-languages-section ${isSide ? 'cv-sidebar-section' : 'cv-languages-main-section'}`}>
+      <div
+        className={`cv-section cv-languages-section ${isSide ? 'cv-sidebar-section' : 'cv-languages-main-section'}`}
+        data-cv-anchor="languages"
+      >
         <SectionHead title="Languages" style={isSide ? titleSide : titleMain} zone={isSide ? 'sidebar' : 'main'} />
         <div className={isSide ? 'cv-languages-list' : 'cv-languages-main-list'}>
           {visibleLanguages.map((lang, idx) => renderLangItem(lang, idx, zone))}
@@ -438,7 +441,10 @@ export function CvLayoutRenderer({ layout, model }) {
       || visibleCats.some((c) => c.category && !/^\[.*\]$/.test(String(c.category).trim()));
 
     return (
-      <div className={`cv-section cv-skills-section cv-skills-section--${sectionId} ${isSide ? 'cv-sidebar-section' : 'cv-skills-main-section'}`}>
+      <div
+        className={`cv-section cv-skills-section cv-skills-section--${sectionId} ${isSide ? 'cv-sidebar-section' : 'cv-skills-main-section'}`}
+        data-cv-anchor={`skills:${sectionId}`}
+      >
         <SectionHead
           title={title}
           style={isSide ? titleSide : titleMain}
@@ -580,7 +586,10 @@ export function CvLayoutRenderer({ layout, model }) {
     if (!isSectionVisible(data.sections, 'references') || visibleReferences.length === 0) return null;
     const isSide = zone === 'sidebar';
     return (
-      <div className={`cv-section cv-references-section cv-references-section--${layout.referenceStyle || 'stacked'}`}>
+      <div
+        className={`cv-section cv-references-section cv-references-section--${layout.referenceStyle || 'stacked'}`}
+        data-cv-anchor="references"
+      >
         <SectionHead title="References" style={isSide ? titleSide : titleMain} zone={isSide ? 'sidebar' : 'main'} />
         <div className="cv-references-list">
           {visibleReferences.map(renderReferenceEntry)}
@@ -593,7 +602,7 @@ export function CvLayoutRenderer({ layout, model }) {
     if (layout.summaryInHeader) return null;
     if (!isSectionVisible(data.sections, 'profile') || !data.personal.summary) return null;
     return (
-      <div className="cv-section cv-profile-section">
+      <div className="cv-section cv-profile-section" data-cv-anchor="profile">
         <SectionHead title="Profile" style={titleMain} zone="main" />
         <ul className="emp-bullets cv-profile-bullets">
           {getProfilePoints(data.personal.summary).map((para, idx) => {
@@ -621,14 +630,14 @@ export function CvLayoutRenderer({ layout, model }) {
   const renderEmployment = () => {
     if (!isSectionVisible(data.sections, 'employment') || visibleEmployment.length === 0) return null;
     return (
-      <div className="cv-section cv-employment-section">
+      <div className="cv-section cv-employment-section" data-cv-anchor="employment">
         <SectionHead title="Employment History" style={titleMain} zone="main" />
         {visibleEmployment.map((emp) => {
           const empBullets = visibleBullets(emp.bullets);
           const bulletsForView = isConciseView(viewMode) ? empBullets.slice(0, 3) : empBullets;
           const empProjects = visibleItems(emp.projects || []);
           return (
-            <div key={emp.id} className={empClass}>
+            <div key={emp.id} className={empClass} data-cv-anchor={`employment:${emp.id}`}>
               <div className="emp-header-row">
                 <span
                   className="emp-company"
@@ -794,12 +803,12 @@ export function CvLayoutRenderer({ layout, model }) {
 
   const renderEducation = () => (
     isSectionVisible(data.sections, 'education') && visibleEducation.length > 0 && (
-      <div className="cv-section cv-education-section">
+      <div className="cv-section cv-education-section" data-cv-anchor="education">
         <SectionHead title="Education" style={titleMain} zone="main" />
         {visibleEducation.map((edu, idx) => {
           const eduBullets = visibleBullets(edu.bullets);
           return (
-            <div key={edu.id || idx} className="cv-education-block">
+            <div key={edu.id || idx} className="cv-education-block" data-cv-anchor={`education:${edu.id || idx}`}>
               <div className="cv-split-row cv-education-degree">
                 <span>
                   <EditableText
@@ -860,7 +869,7 @@ export function CvLayoutRenderer({ layout, model }) {
 
   const renderAvailability = () => (
     showAvailabilitySection && (
-      <div className="cv-section cv-availability-section">
+      <div className="cv-section cv-availability-section" data-cv-anchor="availability">
         <SectionHead title="Availability" style={titleMain} zone="main" />
         <ul className="emp-bullets cv-availability-list">
           {AVAILABILITY_FIELD_DEFS.map((field) => (
@@ -921,7 +930,7 @@ export function CvLayoutRenderer({ layout, model }) {
       </>
     ),
     contact: () => layout.contactInSidebar && (
-      <div className="cv-sidebar-section cv-sidebar-contact-section">
+      <div className="cv-sidebar-section cv-sidebar-contact-section" data-cv-anchor="personal">
         <SectionHead title="Contact" style={titleSide} zone="sidebar" />
         {renderContactSidebar()}
       </div>
@@ -937,7 +946,7 @@ export function CvLayoutRenderer({ layout, model }) {
     ...skillSidebarBlocks,
     certifications: () => (
       isSectionVisible(data.sections, 'certifications') && visibleCerts.length > 0 && (
-        <div className="cv-sidebar-section cv-certs-section">
+        <div className="cv-sidebar-section cv-certs-section" data-cv-anchor="certifications">
           <SectionHead title="Certifications" style={titleSide} zone="sidebar" />
           {visibleCerts.map((cert, idx) => renderCertEntry(cert, idx))}
         </div>
@@ -946,7 +955,7 @@ export function CvLayoutRenderer({ layout, model }) {
     references: () => renderReferences('sidebar'),
     sabbatical: () => (
       isSectionVisible(data.sections, 'sabbatical') && data.sabbatical?.enabled && (
-        <div className="sabbatical-box">
+        <div className="sabbatical-box" data-cv-anchor="sabbatical">
           <SectionHead title="Notes" style={titleSide} zone="sidebar" />
           <ul className="cv-sabbatical-list">
             {data.sabbatical.bullets.map((b, idx) => (

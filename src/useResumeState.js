@@ -24,6 +24,7 @@ import {
   readColorOverridesFromSettings,
 } from './cvColorPalette';
 import {
+  DEFAULT_SECTION_VISIBILITY,
   isSectionVisible,
   normalizeBullets,
   patchBulletText,
@@ -36,10 +37,46 @@ import {
   normalizeAvailability,
 } from './availabilityFields.js';
 import {
+  SKILL_SECTION_CORE,
   createEmptySkillCategory,
   createEmptySkillSection,
   normalizeSidebarSectionOrder,
 } from './sidebarSections.js';
+
+function createBlankResumeData() {
+  return {
+    personal: {
+      name: '',
+      title: '',
+      email: '',
+      phone: '',
+      address: '',
+      links: [
+        { label: 'LinkedIn', url: '' },
+        { label: 'Portfolio', url: '' },
+      ],
+      photo: '',
+      summary: '',
+    },
+    employment: [],
+    education: [],
+    skillSections: [
+      {
+        id: SKILL_SECTION_CORE,
+        title: 'Core Competencies',
+        visible: true,
+        categories: [createEmptySkillCategory('blank')],
+      },
+    ],
+    sidebarSectionOrder: ['languages', SKILL_SECTION_CORE, 'certifications'],
+    languages: [],
+    certifications: [],
+    references: [],
+    sabbatical: { enabled: false, bullets: [''] },
+    availability: {},
+    sections: { ...DEFAULT_SECTION_VISIBILITY },
+  };
+}
 
 // Helper formatters
 const formatTypoPercent = (ratio) => `${Math.round(ratio * 100)}%`;
@@ -829,7 +866,7 @@ export function useResumeState(normalizeResumeData) {
   };
 
   const resetToDefaultTemplate = async () => {
-    if (!window.confirm('Reset to the starter template? All unsaved changes will be lost.')) return;
+    if (!window.confirm('Load the demo / starter CV? Unsaved changes will be lost.')) return;
     try {
       applyImportedPayload(await loadDefaultTemplate());
     } catch (err) {
@@ -839,6 +876,12 @@ export function useResumeState(normalizeResumeData) {
         `Could not load ${DEFAULT_TEMPLATE_FILENAME}. Loaded bundled defaults instead.\n\nRun: npm run sync:defaults`,
       );
     }
+  };
+
+  const clearResumeToBlank = () => {
+    if (!window.confirm('Clear all CV content to a blank form? Unsaved changes will be lost.')) return;
+    setData(normalizeResumeData(createBlankResumeData()));
+    setActiveTab('personal');
   };
 
   const exportJSON = async () => {
@@ -978,6 +1021,7 @@ export function useResumeState(normalizeResumeData) {
     buildExportPayload,
     applyImportedPayload,
     resetToDefaultTemplate,
+    clearResumeToBlank,
     exportJSON,
     importJSON,
     handlePrint,
