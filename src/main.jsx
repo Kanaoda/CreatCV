@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import defaultResumeData from '../reference/default_resume.json';
 import defaultAppSettings from '../reference/default_app_settings.json';
@@ -210,7 +210,91 @@ const normalizeResumeData = (raw) => {
 };
 
 
+const PREVIEW_ZOOM_KEY = 'creatcv-preview-zoom';
+const PREVIEW_ZOOM_MIN = 0.5;
+const PREVIEW_ZOOM_MAX = 1;
+const PREVIEW_ZOOM_STEP = 0.01; // slider: 1%
+const PREVIEW_ZOOM_BUTTON_STEP = 0.05; // +/- buttons: 5%
+
+function readStoredPreviewZoom() {
+  try {
+    const raw = localStorage.getItem(PREVIEW_ZOOM_KEY);
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= PREVIEW_ZOOM_MIN && n <= PREVIEW_ZOOM_MAX) return n;
+  } catch {
+    /* ignore */
+  }
+  if (typeof window !== 'undefined' && window.innerWidth < 1700) return 0.72;
+  return 1;
+}
+
 function App() {
+  const [previewZoom, setPreviewZoom] = useState(readStoredPreviewZoom);
+  const [zoomDraft, setZoomDraft] = useState(null); // while dragging slider — keeps thumb stable
+  const [previewNaturalHeight, setPreviewNaturalHeight] = useState(0);
+  const previewScaleRef = useRef(null);
+  const zoomDraggingRef = useRef(false);
+  const zoomRafRef = useRef(0);
+
+  const clampPreviewZoom = (z) => {
+    const n = Number(z);
+    if (!Number.isFinite(n)) return PREVIEW_ZOOM_MAX;
+    return Math.min(PREVIEW_ZOOM_MAX, Math.max(PREVIEW_ZOOM_MIN, Number(n.toFixed(2))));
+  };
+
+  const displayZoom = zoomDraft ?? previewZoom;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PREVIEW_ZOOM_KEY, String(previewZoom));
+    } catch {
+      /* ignore */
+    }
+  }, [previewZoom]);
+
+  useEffect(() => () => {
+    if (zoomRafRef.current) cancelAnimationFrame(zoomRafRef.current);
+  }, []);
+
+  const commitPreviewZoom = (z) => {
+    setPreviewZoom(clampPreviewZoom(z));
+  };
+
+  const nudgePreviewZoom = (delta) => {
+    if (zoomDraggingRef.current) return;
+    setPreviewZoom((z) => clampPreviewZoom(
+      Math.round((z + delta) / PREVIEW_ZOOM_BUTTON_STEP) * PREVIEW_ZOOM_BUTTON_STEP,
+    ));
+  };
+
+  const onZoomPointerDown = () => {
+    zoomDraggingRef.current = true;
+    setZoomDraft(previewZoom);
+  };
+
+  const onZoomPointerUp = (event) => {
+    if (!zoomDraggingRef.current) return;
+    zoomDraggingRef.current = false;
+    const next = clampPreviewZoom(Number(event.currentTarget.value) / 100);
+    setZoomDraft(null);
+    commitPreviewZoom(next);
+  };
+
+  const onZoomSliderChange = (event) => {
+    const next = clampPreviewZoom(Number(event.target.value) / 100);
+    if (zoomDraggingRef.current) {
+      setZoomDraft(next);
+      // Live preview, but rAF-coalesce so layout work doesn't fight the pointer
+      if (zoomRafRef.current) cancelAnimationFrame(zoomRafRef.current);
+      zoomRafRef.current = requestAnimationFrame(() => {
+        zoomRafRef.current = 0;
+        setPreviewZoom(next);
+      });
+      return;
+    }
+    commitPreviewZoom(next);
+  };
+
   const {
     data, setData,
     templateId, setTemplateId,
@@ -302,6 +386,16 @@ function App() {
     handlePrint,
     handleWordExport,
   } = useResumeState(normalizeResumeData);
+
+  useLayoutEffect(() => {
+    const el = previewScaleRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const measure = () => setPreviewNaturalHeight(el.offsetHeight || 0);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [previewZoom, templateId, viewMode, data, fontSizeRatio, spacingFactor, sidebarSpacingFactor, showSkillRatings]);
 
   React.useEffect(() => {
     const pageEl = document.querySelector('.cv-page');
@@ -492,7 +586,14 @@ function App() {
           <div className="tab-navigation">
             <button className={`tab-btn ${activeTab === 'personal' ? 'active' : ''}`} onClick={() => setActiveTab('personal')}>Profile</button>
             <button className={`tab-btn ${activeTab === 'employment' ? 'active' : ''}`} onClick={() => setActiveTab('employment')}>Work</button>
-            <button className={`tab-btn ${activeTab === 'skills' ? 'active' : ''}`} onClick={() => setActiveTab('skills')}>Skills / Lang</button>
+            <button
+              className={`tab-btn ${activeTab === 'skills' ? 'active' : ''}`}
+              onClick={() => setActiveTab('skills')}
+              title="Skills / Lang"
+            >
+              <span className="tab-label-full">Skills / Lang</span>
+              <span className="tab-label-short">Skills</span>
+            </button>
             <button className={`tab-btn ${activeTab === 'other' ? 'active' : ''}`} onClick={() => setActiveTab('other')}>Other</button>
           </div>
         </div>
@@ -1141,7 +1242,7 @@ function App() {
                 <div key={section.id} className="section-card">
                   <div className="section-title-bar">
                     <h2>{section.title || 'Skills section'}</h2>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div className="section-title-bar__actions">
                       <VisibilityToggle
                         visible={isSkillSectionVisible(data.sections, section)}
                         onChange={(v) => {
@@ -1551,8 +1652,23 @@ function App() {
       {/* RIGHT: Live Preview Workspace */}
       <div className="preview-panel">
 
-        {/* Dynamic A4 Preview Sheet */}
-        <div className="cv-page-container">
+        {/* Screen-only preview scale: outer slot owns layout size; inner stays true 210mm.
+            Print CSS resets transform / slot sizing so PDF matches full A4. */}
+        <div
+          className="cv-preview-zoom-slot"
+          style={{
+            width: `calc(210mm * ${previewZoom})`,
+            height: previewNaturalHeight ? `${previewNaturalHeight * previewZoom}px` : 'auto',
+          }}
+        >
+          <div
+            ref={previewScaleRef}
+            className="cv-page-container"
+            style={{
+              transform: previewZoom === 1 ? undefined : `scale(${previewZoom})`,
+              transformOrigin: 'top left',
+            }}
+          >
           <div
             className={`cv-page ${template.layoutClass}`}
             data-template-id={template.templateId}
@@ -1681,16 +1797,69 @@ function App() {
               />
             )}
           </div>
+          </div>
         </div>
 
         {/* Floating Control Card (Bottom-Right overlay) */}
         <div className="floating-control-card">
+          <div className="control-field control-field--zoom">
+            <label htmlFor="cv-preview-zoom">Preview zoom</label>
+            <div className="preview-zoom-controls">
+              <button
+                type="button"
+                className="btn preview-zoom-btn"
+                onClick={() => nudgePreviewZoom(-PREVIEW_ZOOM_BUTTON_STEP)}
+                title="Zoom out 5%"
+                aria-label="Zoom out preview"
+              >
+                −
+              </button>
+              <input
+                id="cv-preview-zoom"
+                className="preview-zoom-slider"
+                type="range"
+                min={PREVIEW_ZOOM_MIN * 100}
+                max={PREVIEW_ZOOM_MAX * 100}
+                step={PREVIEW_ZOOM_STEP * 100}
+                value={Math.round(displayZoom * 100)}
+                onPointerDown={onZoomPointerDown}
+                onPointerUp={onZoomPointerUp}
+                onPointerCancel={onZoomPointerUp}
+                onBlur={onZoomPointerUp}
+                onChange={onZoomSliderChange}
+                title="Screen preview only — PDF/print stays full size"
+              />
+              <button
+                type="button"
+                className="btn preview-zoom-btn"
+                onClick={() => nudgePreviewZoom(PREVIEW_ZOOM_BUTTON_STEP)}
+                title="Zoom in 5%"
+                aria-label="Zoom in preview"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                className="btn preview-zoom-reset"
+                onClick={() => {
+                  zoomDraggingRef.current = false;
+                  setZoomDraft(null);
+                  commitPreviewZoom(1);
+                }}
+                title="Reset preview to 100%"
+              >
+                {Math.round(displayZoom * 100)}%
+              </button>
+            </div>
+            <p className="preview-zoom-hint">Screen only · print/PDF unchanged</p>
+          </div>
           <div className="control-field control-field--preset">
             <label htmlFor="cv-template-select">Template</label>
             <select
               id="cv-template-select"
               className="control-select control-select--accent"
               value={templateId}
+              title={listTemplateOptions().find((p) => p.id === templateId)?.name || 'Template'}
               onChange={(e) => setTemplateId(e.target.value)}
             >
               {listTemplateOptions().map((p) => (
@@ -1704,6 +1873,14 @@ function App() {
               id="cv-format-select"
               className="control-select"
               value={viewMode}
+              title={
+                ({
+                  'full-projects': 'Full CV + Projects (new page)',
+                  detailed: 'Detailed CV',
+                  concise: 'Concise Resume',
+                  'project-list': 'Project List only',
+                })[viewMode] || 'Output Format'
+              }
               onChange={(e) => setViewMode(e.target.value)}
             >
               <option value="full-projects">Full CV + Projects (new page)</option>

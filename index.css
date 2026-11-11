@@ -11,10 +11,15 @@ body {
   height: 100%;
   background: #080808;
   color: #ffffff;
+  /* Inter per PROJECT_RULES; system-ui/-apple-system keep Mac SF Pro fallback readable offline */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #app {
   min-height: 100vh;
+  font-family: inherit;
 }
 
 :root {
@@ -437,9 +442,11 @@ body {
 
 .app-container {
   display: grid;
-  grid-template-columns: 580px 1fr;
+  /* Prefer a wide editor for typing; preview zoom (screen-only) frees space on Mac. */
+  grid-template-columns: minmax(400px, 520px) minmax(0, 1fr);
   height: 100vh;
   width: 100vw;
+  overflow: hidden;
 }
 
 /* LEFT PANEL: Editor Console */
@@ -451,13 +458,17 @@ body {
   height: 100vh;
   overflow: hidden;
   position: relative;
+  min-width: 0;
 }
 
 
 .editor-header {
-  padding: 20px 24px 18px;
+  flex-shrink: 0;
+  padding: 16px 20px 14px;
   border-bottom: 1px solid rgba(63, 63, 70, 0.55);
   background: #000000;
+  overflow: visible;
+  box-sizing: border-box;
 }
 
 .editor-brand {
@@ -465,15 +476,28 @@ body {
   justify-content: center;
   align-items: center;
   gap: 14px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  /* Room for logo drop-shadow inside overflow:hidden editor-panel */
+  padding: 2px 4px 8px;
 }
 
+/* Was height:245px — on Mac’s narrower editor the bitmap overflowed and got
+   clipped by .editor-panel { overflow:hidden }. Size by max bounds, keep ratio. */
 .editor-brand-logo-img {
-  height: 245px;
   display: block;
-  border: 6px solid #ffffff;
-  border-radius: 0px;
+  width: auto;
+  max-width: calc(100% - 8px);
+  height: auto;
+  max-height: 120px;
+  border: 4px solid #ffffff;
+  border-radius: 0;
   object-fit: contain;
-  box-shadow: 6px 6px 0px #000000;
+  object-position: center;
+  box-shadow: 4px 4px 0px #000000;
+  box-sizing: border-box;
 }
 
 .editor-brand-heading {
@@ -554,6 +578,8 @@ body {
 
 .tab-btn {
   flex-grow: 1;
+  flex-basis: 0;
+  min-width: 0;
   background: transparent;
   border: none;
   color: var(--text-ui-secondary);
@@ -563,6 +589,13 @@ body {
   border-radius: 2px;
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-btn .tab-label-short {
+  display: none;
 }
 
 .tab-btn.active {
@@ -646,14 +679,20 @@ body {
   padding: 20px;
   box-shadow: 4px 4px 0px var(--accent-ui);
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 .section-title-bar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 10px 12px;
   margin-bottom: 16px;
+  min-width: 0;
 }
 
 .section-title-bar h2 {
@@ -662,10 +701,36 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #ffffff;
+  flex: 1 1 140px;
+  min-width: 0;
+  margin: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.section-title-bar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.section-title-bar__actions .btn {
+  flex: 0 1 auto;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .form-group {
   margin-bottom: 14px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .form-inline-color {
@@ -758,6 +823,7 @@ input[type="color"]::-webkit-color-swatch {
 .form-group select {
   width: 100% !important;
   max-width: 100% !important;
+  min-width: 0;
   box-sizing: border-box !important;
   background-color: #0b0b0b;
   border: 2px solid #404040;
@@ -1212,32 +1278,44 @@ input[type="color"]::-webkit-color-swatch {
   border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
-/* CENTER PANEL: Preview Workspace */
+/* CENTER PANEL: Preview Workspace
+   CV page stays true 210mm; screen zoom is applied via .cv-preview-zoom-slot.
+   Right gutter reserves space for the fixed export/zoom card so dragging the
+   zoom slider never recenters controls under the cursor (jump bug). */
 .preview-panel {
   background-color: var(--bg-preview-canvas);
   height: 100vh;
+  min-width: 0;
+  overflow-x: auto;
   overflow-y: auto;
-  padding: 40px 30px;
+  padding: 32px 300px 40px 24px;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: flex-start;
-  gap: 30px;
+  gap: 20px;
+  box-sizing: border-box;
 }
 
-/* Floating Control Card (Sticky next to CV page) */
+/* Fixed — must NOT be a flex sibling of the zooming A4 page, or justify-content
+   recenters the card while dragging the range input and the thumb jumps. */
 .floating-control-card {
-  position: sticky;
-  top: 40px;
-  width: 300px;
-  flex-shrink: 0;
-  background-color: rgba(18, 18, 18, 0.9);
+  position: fixed;
+  top: 24px;
+  right: 16px;
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background-color: rgba(18, 18, 18, 0.94);
   backdrop-filter: blur(12px);
   border: 2px solid #ffffff;
   border-radius: 8px;
   padding: 16px;
-  box-shadow: 4px 4px 0px var(--accent-ui);
-  z-index: 100;
+  box-shadow: -4px 4px 0px var(--accent-ui);
+  z-index: 200;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1249,6 +1327,7 @@ input[type="color"]::-webkit-color-swatch {
   gap: 6px;
   flex: none !important;
   height: auto !important;
+  min-width: 0;
 }
 
 .floating-control-card .control-field label {
@@ -1261,16 +1340,29 @@ input[type="color"]::-webkit-color-swatch {
 
 .floating-control-card .control-select {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background-color: #0b0b0b;
   border: 2px solid #404040;
   border-radius: 4px;
-  padding: 8px 12px;
+  /* Extra right padding: macOS Chrome/Safari native chevron steals ~24–28px */
+  padding: 8px 34px 8px 12px;
   color: var(--text-ui-primary);
   font-size: 0.85rem;
   font-weight: 600;
+  font-family: inherit;
   height: 38px;
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1.5 1.75L6 6.25L10.5 1.75' stroke='%23e5e5e5' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 8px;
 }
 
 .floating-control-card .control-select:hover {
@@ -1297,6 +1389,147 @@ input[type="color"]::-webkit-color-swatch {
   font-size: 0.85rem;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+/* Screen-only preview zoom (print/PDF forced back to 100% in @media print) */
+.preview-zoom-controls {
+  display: grid;
+  grid-template-columns: 34px 1fr 34px auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.preview-zoom-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  justify-content: center;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.preview-zoom-slider {
+  width: 100%;
+  accent-color: var(--accent-ui);
+  cursor: pointer;
+  touch-action: none; /* avoid scroll/gesture fighting the drag on trackpads */
+}
+
+.preview-zoom-reset {
+  min-width: 52px;
+  height: 34px;
+  padding: 0 8px;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.preview-zoom-hint {
+  margin: 2px 0 0;
+  font-size: 0.68rem;
+  color: #a1a1aa;
+  letter-spacing: 0.02em;
+}
+
+/* --------------------------------------------------------------------------
+   Laptop / Mac viewport fit — wide editor + zoomable preview
+   Default zoom ~72% on first visit (<1700px) so 460px editor still fits.
+   -------------------------------------------------------------------------- */
+@media (max-width: 1680px) {
+  .app-container {
+    /* Typing-first: ~440–480px editor; preview zoom keeps A4+card on screen */
+    grid-template-columns: minmax(420px, 480px) minmax(0, 1fr);
+  }
+
+  .editor-header {
+    padding: 14px 16px 12px;
+  }
+
+  .editor-brand-logo-img {
+    max-height: 100px;
+    border-width: 3px;
+    box-shadow: 3px 3px 0px #000000;
+  }
+
+  .editor-sections-scroll {
+    padding: 16px;
+  }
+
+  .editor-header-actions {
+    margin-top: 12px;
+    gap: 6px;
+  }
+
+  .editor-header-actions .btn {
+    padding: 7px 10px;
+    font-size: 0.76rem;
+  }
+
+  .tab-navigation {
+    margin-top: 12px;
+  }
+
+  .tab-btn {
+    font-size: 0.78rem;
+    padding: 6px 6px;
+  }
+
+  .tab-btn .tab-label-full {
+    display: none;
+  }
+
+  .tab-btn .tab-label-short {
+    display: inline;
+  }
+
+  .section-card {
+    padding: 16px;
+    box-shadow: 3px 3px 0px var(--accent-ui);
+  }
+
+  .section-title-bar {
+    margin-bottom: 12px;
+  }
+
+  .preview-panel {
+    padding: 24px 280px 32px 16px;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .floating-control-card {
+    width: 260px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .app-container {
+    grid-template-columns: minmax(360px, 400px) minmax(0, 1fr);
+  }
+
+  .editor-brand-logo-img {
+    max-height: 84px;
+  }
+
+  .preview-panel {
+    padding: 20px 268px 28px 12px;
+  }
+
+  .cv-page-container {
+    margin: 0;
+  }
+
+  .floating-control-card {
+    top: 16px;
+    right: 12px;
+    width: 250px;
+    padding: 12px;
+  }
+
+  .floating-control-card .control-select {
+    font-size: 0.78rem;
+  }
 }
 
 .control-bar__options {
@@ -1404,10 +1637,18 @@ input[type="color"]::-webkit-color-swatch {
   color: var(--text-ui-secondary);
 }
 
-/* A4 Page View (Preview Canvas) */
+/* Screen preview scaler — owns the flexed layout box; print resets below */
+.cv-preview-zoom-slot {
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* A4 Page View (Preview Canvas) — true 210mm; scale via parent slot only on screen */
 .cv-page-container {
   width: 210mm;
   max-width: 210mm;
+  margin: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -2576,10 +2817,18 @@ input[type="color"]::-webkit-color-swatch {
     overflow: visible !important;
   }
 
+  .cv-preview-zoom-slot {
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   .cv-page-container {
     max-width: 100% !important;
     width: 100% !important;
     gap: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
   }
 
   /* 4. CV PAGE — ANTI-RASTERIZATION CORE
