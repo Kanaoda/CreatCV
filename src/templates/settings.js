@@ -25,6 +25,7 @@ export function buildAppSettingsExport({
   sidebarSpacingFactor,
   photoFrameStyle,
   photoScale,
+  showPhoto,
   showSkillRatings,
   colors,
   viewMode,
@@ -39,10 +40,16 @@ export function buildAppSettingsExport({
     sidebarSpacingFactor,
     photoFrameStyle,
     photoScale,
+    showPhoto: showPhoto !== false,
     showSkillRatings: Boolean(showSkillRatings),
     colors,
     viewMode: viewMode ?? 'full-projects',
   };
+}
+
+/** @returns {boolean} — default on (photo shown when present) */
+export function readShowPhotoFromSettings(settings = {}) {
+  return settings.showPhoto !== false;
 }
 
 /** @returns {boolean} */

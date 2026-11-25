@@ -372,6 +372,7 @@ function App() {
     paperTexture, setPaperTexture,
     photoFrameStyle, setPhotoFrameStyle,
     photoScale, setPhotoScale,
+    showPhoto, setShowPhoto,
     showSkillRatings, setShowSkillRatings,
     colorOverrides, setColorOverrides,
     setColorOverride,
@@ -801,6 +802,14 @@ function App() {
                   Turn sections off to tailor each export — content stays in your JSON and editor.
                 </p>
                 <div className="section-visibility-grid">
+                  <div className="section-visibility-row">
+                    <span>Profile photo</span>
+                    <VisibilityToggle
+                      visible={showPhoto}
+                      onChange={setShowPhoto}
+                      title="Profile photo on CV"
+                    />
+                  </div>
                   {[
                     { key: 'profile', label: 'Profile summary' },
                     { key: 'employment', label: 'Employment history' },
@@ -898,11 +907,19 @@ function App() {
                   ) : null}
                 </div>
                 <div className="form-group">
-                  <label>Upload Profile Photo</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                    <label style={{ marginBottom: 0 }}>Upload Profile Photo</label>
+                    <VisibilityToggle
+                      visible={showPhoto}
+                      onChange={setShowPhoto}
+                      title="Profile photo on CV"
+                    />
+                  </div>
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoUpload} style={{ padding: '6px' }} />
                   <p className="sortable-list-hint" style={{ marginTop: '6px' }}>
                     Photos are auto-compressed (max 400px edge) to keep PDF exports under 5MB.
                     {data.personal.photo ? ` Current size: ${formatPhotoSizeLabel(data.personal.photo)}.` : ''}
+                    {' '}Hidden keeps the file in your JSON — only removes it from preview / PDF.
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
@@ -1921,6 +1938,7 @@ function App() {
                   getLanguagePercentage,
                   normalizeExternalUrl,
                   showSkillRatings,
+                  showPhoto,
                   handlePersonalChange,
                   updateEmployment,
                   updateBullet,
@@ -1954,6 +1972,7 @@ function App() {
                   renderCertEntry,
                   normalizeExternalUrl,
                   showSkillRatings,
+                  showPhoto,
                   handlePersonalChange,
                   updateEmployment,
                   updateBullet,
@@ -1988,6 +2007,7 @@ function App() {
                   getLanguagePercentage,
                   normalizeExternalUrl,
                   showSkillRatings,
+                  showPhoto,
                   handlePersonalChange,
                   updateEmployment,
                   updateBullet,

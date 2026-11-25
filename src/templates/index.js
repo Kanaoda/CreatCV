@@ -35,6 +35,7 @@ export { buildTemplateThemeCssVars } from './themeCss.js';
 export {
   normalizeAppSettings,
   readTemplateIdFromSettings,
+  readShowPhotoFromSettings,
   readShowSkillRatingsFromSettings,
   buildAppSettingsExport,
 } from './settings.js';

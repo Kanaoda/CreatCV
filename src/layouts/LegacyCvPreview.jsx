@@ -54,6 +54,7 @@ export function LegacyCvPreview({ model }) {
     getLanguagePercentage,
     normalizeExternalUrl,
     showSkillRatings = false,
+    showPhoto = true,
     handlePersonalChange,
     updateEmployment,
     updateBullet,
@@ -230,14 +231,14 @@ export function LegacyCvPreview({ model }) {
             })}
           </div>
         </div>
-        {data.personal.photo && template.photoPlacement === PHOTO_PLACEMENT.HEADER && (
+        {showPhoto !== false && data.personal.photo && template.photoPlacement === PHOTO_PLACEMENT.HEADER && (
           <img src={data.personal.photo} alt={data.personal.name} className={getPhotoClassName('header')} />
         )}
       </div>
 
       <div className="cv-grid-layout">
         <div className="cv-sidebar-col">
-          {data.personal.photo && template.photoPlacement === PHOTO_PLACEMENT.SIDEBAR && (
+          {showPhoto !== false && data.personal.photo && template.photoPlacement === PHOTO_PLACEMENT.SIDEBAR && (
             <div className="sidebar-avatar-container" style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
               <img src={data.personal.photo} alt={data.personal.name} className={getPhotoClassName('sidebar')} />
             </div>

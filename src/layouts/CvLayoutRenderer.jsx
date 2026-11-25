@@ -51,6 +51,7 @@ export function CvLayoutRenderer({ layout, model }) {
     renderCertEntry,
     normalizeExternalUrl,
     showSkillRatings = false,
+    showPhoto = true,
     handlePersonalChange,
     updateEmployment,
     updateBullet,
@@ -70,11 +71,13 @@ export function CvLayoutRenderer({ layout, model }) {
   const titleSide = layout.sectionTitleSidebar || 'caps';
   const empClass = `emp-block emp-block--${layout.employment || 'standard'}`;
 
-  const showHeaderPhoto = () => layout.photo === 'header' && data.personal.photo;
-  const showSidebarPhoto = () => layout.photo === 'sidebar' && data.personal.photo;
-  const showHeroPhoto = () => layout.photo === 'hero';
+  const photoOnCv = showPhoto !== false && Boolean(data.personal.photo);
+  const showHeaderPhoto = () => layout.photo === 'header' && photoOnCv;
+  const showSidebarPhoto = () => layout.photo === 'sidebar' && photoOnCv;
+  const showHeroPhoto = () => layout.photo === 'hero' && showPhoto !== false;
 
   const renderPhotoPlaceholder = (zone) => {
+    if (showPhoto === false) return null;
     if (data.personal.photo || layout.photo === 'none') return null;
     if (zone === 'header' && layout.photo !== 'header') return null;
     if (zone === 'sidebar' && layout.photo !== 'sidebar') return null;
@@ -229,9 +232,9 @@ export function CvLayoutRenderer({ layout, model }) {
       return (
         <div className="cv-header cv-header--layout-hero-card" data-cv-anchor="personal">
           <div className="cv-hero-card-row">
-            {(showHeaderPhoto() || layout.photo === 'header') && (
+            {showPhoto !== false && layout.photo === 'header' && (
               <div className="cv-hero-card-photo">
-                {data.personal.photo ? (
+                {photoOnCv ? (
                   <img src={data.personal.photo} alt={data.personal.name} className={getPhotoClassName('header')} />
                 ) : renderPhotoPlaceholder('header')}
               </div>
@@ -926,7 +929,7 @@ export function CvLayoutRenderer({ layout, model }) {
             <img src={data.personal.photo} alt={data.personal.name} className={getPhotoClassName('sidebar')} />
           </div>
         )}
-        {!data.personal.photo && layout.photo === 'sidebar' && renderPhotoPlaceholder('sidebar')}
+        {!photoOnCv && layout.photo === 'sidebar' && renderPhotoPlaceholder('sidebar')}
       </>
     ),
     contact: () => layout.contactInSidebar && (

@@ -7,6 +7,7 @@ import { DEFAULT_TEMPLATE_FILENAME, loadDefaultTemplate } from './resumeDefaults
 import {
   readTemplateIdFromSettings,
   buildAppSettingsExport,
+  readShowPhotoFromSettings,
   readShowSkillRatingsFromSettings,
 } from './templates/index.js';
 import {
@@ -99,6 +100,9 @@ export function useResumeState(normalizeResumeData) {
   const [paperTexture, setPaperTexture] = useState(defaultAppSettings.paperTexture || 'none');
   const [photoFrameStyle, setPhotoFrameStyle] = useState(defaultAppSettings.photoFrameStyle || 'preset');
   const [photoScale, setPhotoScale] = useState(defaultAppSettings.photoScale || '1.1');
+  const [showPhoto, setShowPhoto] = useState(
+    () => readShowPhotoFromSettings(defaultAppSettings),
+  );
   const [showSkillRatings, setShowSkillRatings] = useState(
     () => readShowSkillRatingsFromSettings(defaultAppSettings),
   );
@@ -818,6 +822,7 @@ export function useResumeState(normalizeResumeData) {
       sidebarSpacingFactor,
       photoFrameStyle,
       photoScale,
+      showPhoto,
       showSkillRatings,
       colors: buildColorsExportPayload(colorOverrides),
       viewMode,
@@ -845,6 +850,7 @@ export function useResumeState(normalizeResumeData) {
         }
         if (s.photoFrameStyle) setPhotoFrameStyle(s.photoFrameStyle);
         if (s.photoScale) setPhotoScale(s.photoScale);
+        setShowPhoto(readShowPhotoFromSettings(s));
         setShowSkillRatings(readShowSkillRatingsFromSettings(s));
         setColorOverrides(readColorOverridesFromSettings(s));
         if (s.viewMode) setViewMode(s.viewMode);
@@ -946,6 +952,7 @@ export function useResumeState(normalizeResumeData) {
     paperTexture, setPaperTexture,
     photoFrameStyle, setPhotoFrameStyle,
     photoScale, setPhotoScale,
+    showPhoto, setShowPhoto,
     showSkillRatings, setShowSkillRatings,
     colorOverrides, setColorOverrides,
     setColorOverride,

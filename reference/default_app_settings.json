@@ -7,6 +7,7 @@
   "sidebarSpacingFactor": "1.0",
   "photoFrameStyle": "preset",
   "photoScale": "1.0",
+  "showPhoto": true,
   "showSkillRatings": false,
   "viewMode": "full-projects",
   "colors": {}
