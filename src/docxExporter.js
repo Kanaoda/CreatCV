@@ -1,7 +1,6 @@
 import {
-  AVAILABILITY_FIELD_DEFS,
+  getShownAvailabilityRows,
   hasAnyShownAvailabilityField,
-  isAvailabilityFieldShown,
 } from './availabilityFields.js';
 import {
   bulletText,
@@ -503,14 +502,16 @@ export async function exportToWord(data, viewMode, outputTitle) {
 
     const avail = data.availability;
     if (isSectionVisible(data.sections, 'availability') && avail && hasAnyShownAvailabilityField(avail)) {
-      addSectionTitle('Availability');
-      const shownFields = AVAILABILITY_FIELD_DEFS.filter((f) => isAvailabilityFieldShown(avail, f.key));
-      shownFields.forEach((field, idx) => {
+      // No "Availability" heading — field labels are self-explanatory; keep a short gap.
+      const shownRows = getShownAvailabilityRows(avail);
+      shownRows.forEach((row, idx) => {
         children.push(
           new Paragraph({
-            text: `${field.previewLabel}: ${avail[field.key]}`,
-            bullet: { level: 0 },
-            spacing: { after: idx === shownFields.length - 1 ? 60 : 40 },
+            text: row.map((field) => `${field.previewLabel}: ${avail[field.key]}`).join('    '),
+            spacing: {
+              before: idx === 0 ? 160 : 0,
+              after: idx === shownRows.length - 1 ? 60 : 40,
+            },
           }),
         );
       });

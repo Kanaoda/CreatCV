@@ -167,6 +167,33 @@
   padding-bottom: 3px;
 }
 
+/* Availability ruled separator — keep compact under layout engine */
+.cv-availability-section--ruled > .cv-availability-divider {
+  margin-bottom: calc(6px * var(--cv-spacing-factor, 1));
+}
+
+/* Compact short sections — denser SectionHead, keep style family */
+.cv-section--compact > .cv-sec-head {
+  margin-bottom: calc(6px * var(--cv-spacing-factor, 1));
+}
+
+.cv-section--compact > .cv-sec-head--bar {
+  padding: 4px 10px;
+  margin-bottom: calc(6px * var(--cv-spacing-factor, 1));
+}
+
+.cv-section--compact > .cv-sec-head--pill .cv-sec-head-text {
+  padding: 4px 12px;
+}
+
+.cv-section--compact > .cv-sec-head--plain .cv-sec-head-text,
+.cv-section--compact > .cv-sec-head--underline .cv-sec-head-text,
+.cv-section--compact > .cv-sec-head--italic .cv-sec-head-text,
+.cv-section--compact > .cv-sec-head--minimal .cv-sec-head-text,
+.cv-section--compact > .cv-sec-head--caps .cv-sec-head-text {
+  padding-bottom: 2px;
+}
+
 .cv-page[data-layout-id] .cv-section {
   margin-bottom: calc(18px * var(--cv-spacing-factor, 1));
 }

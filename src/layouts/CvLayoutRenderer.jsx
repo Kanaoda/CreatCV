@@ -25,7 +25,7 @@ import {
 import { usesMultiRoleDisplay } from '../employmentRoles';
 import { SectionHead } from './SectionHead.jsx';
 import { getEffectiveSkillDisplay } from './skillDisplay.js';
-import { AVAILABILITY_FIELD_DEFS, isAvailabilityFieldShown } from '../availabilityFields.js';
+import { getShownAvailabilityRows } from '../availabilityFields.js';
 import {
   findSkillSection,
   getVisibleSkillCategories,
@@ -590,7 +590,7 @@ export function CvLayoutRenderer({ layout, model }) {
     const isSide = zone === 'sidebar';
     return (
       <div
-        className={`cv-section cv-references-section cv-references-section--${layout.referenceStyle || 'stacked'}`}
+        className={`cv-section cv-references-section cv-section--compact cv-references-section--${layout.referenceStyle || 'stacked'}`}
         data-cv-anchor="references"
       >
         <SectionHead title="References" style={isSide ? titleSide : titleMain} zone={isSide ? 'sidebar' : 'main'} />
@@ -806,7 +806,7 @@ export function CvLayoutRenderer({ layout, model }) {
 
   const renderEducation = () => (
     isSectionVisible(data.sections, 'education') && visibleEducation.length > 0 && (
-      <div className="cv-section cv-education-section" data-cv-anchor="education">
+      <div className="cv-section cv-education-section cv-section--compact" data-cv-anchor="education">
         <SectionHead title="Education" style={titleMain} zone="main" />
         {visibleEducation.map((edu, idx) => {
           const eduBullets = visibleBullets(edu.bullets);
@@ -872,17 +872,23 @@ export function CvLayoutRenderer({ layout, model }) {
 
   const renderAvailability = () => (
     showAvailabilitySection && (
-      <div className="cv-section cv-availability-section" data-cv-anchor="availability">
-        <SectionHead title="Availability" style={titleMain} zone="main" />
-        <ul className="emp-bullets cv-availability-list">
-          {AVAILABILITY_FIELD_DEFS.map((field) => (
-            isAvailabilityFieldShown(data.availability, field.key) ? (
-              <li key={field.key}>
-                <strong>{field.previewLabel}:</strong> {data.availability[field.key]}
-              </li>
-            ) : null
+      <div className="cv-section cv-availability-section cv-section--compact cv-availability-section--ruled" data-cv-anchor="availability">
+        <div className="cv-availability-divider" role="separator" aria-label="Availability" />
+        <div className="cv-availability-grid">
+          {getShownAvailabilityRows(data.availability).map((row) => (
+            <div
+              key={row.map((f) => f.key).join('-')}
+              className={`cv-availability-row${row.length === 1 ? ' cv-availability-row--single' : ''}`}
+            >
+              {row.map((field) => (
+                <div key={field.key} className="cv-availability-cell">
+                  <strong>{field.previewLabel}:</strong>{' '}
+                  <span>{data.availability[field.key]}</span>
+                </div>
+              ))}
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     )
   );

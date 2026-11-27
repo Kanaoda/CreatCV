@@ -2769,6 +2769,96 @@ input[type="color"]::-webkit-color-swatch {
   color: var(--cv-secondary);
 }
 
+/* Title-less availability: compact accent rule instead of section heading */
+.cv-availability-section--ruled {
+  padding-top: calc(6px * var(--cv-spacing-factor, 1));
+}
+
+.cv-availability-divider {
+  display: block;
+  width: 100%;
+  height: 2px;
+  margin: 0 0 calc(6px * var(--cv-spacing-factor, 1));
+  border: none;
+  border-radius: 1px;
+  background: linear-gradient(
+    to right,
+    var(--cv-accent) 0,
+    var(--cv-accent) 36px,
+    color-mix(in srgb, var(--cv-accent) 70%, transparent) 36px,
+    color-mix(in srgb, var(--cv-accent) 35%, transparent) 100%
+  );
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.cv-availability-grid {
+  display: flex;
+  flex-direction: column;
+  gap: calc(4px * var(--cv-spacing-factor, 1));
+  font-size: 0.8em;
+  line-height: calc(1.3 + 0.2 * var(--cv-spacing-factor, 1));
+  color: var(--cv-text);
+}
+
+.cv-availability-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  align-items: baseline;
+}
+
+.cv-availability-row--single {
+  grid-template-columns: 1fr;
+}
+
+.cv-availability-cell {
+  min-width: 0;
+}
+
+.cv-availability-cell strong {
+  color: var(--cv-secondary);
+  font-weight: 700;
+}
+
+/* Short trailing sections (Education / References / Availability) — all templates */
+.cv-page .cv-main-col > .cv-section.cv-section--compact {
+  padding-top: calc(8px * var(--cv-spacing-factor, 1));
+  margin-bottom: calc(12px * var(--cv-spacing-factor, 1));
+}
+
+.cv-page .cv-main-col > .cv-section.cv-section--compact > .cv-section-title {
+  background: transparent;
+  background-color: transparent;
+  background-image: none;
+  border-left: 3px solid var(--cv-accent);
+  border-bottom: 1px solid color-mix(in srgb, var(--cv-accent) 55%, transparent);
+  border-radius: 0;
+  padding: 2px 0 3px 9px;
+  margin-bottom: calc(6px * var(--cv-spacing-factor, 1));
+  font-size: 0.86em;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  box-shadow: none;
+  width: 100%;
+  display: block;
+}
+
+/* Keep pill personality, just shrink chrome */
+.cv-page[data-layout-family="pill-labels"] .cv-main-col > .cv-section.cv-section--compact > .cv-section-title,
+.cv-page[data-preset="creative-violet"] .cv-main-col > .cv-section.cv-section--compact > .cv-section-title {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  background-color: var(--cv-accent);
+  color: #ffffff;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 16px;
+  padding: 4px 12px;
+  box-shadow: none;
+}
+
 .emp-bullets,
 .bullets-list {
   margin-left: 14px;
@@ -4062,6 +4152,38 @@ body.cv-print-mode .cv-appendix-page-marker {
   box-shadow: 0 1px 0 var(--cv-border);
 }
 
+/* Compact overrides must follow family title accents (cascade wins) */
+.cv-page .cv-main-col > .cv-section.cv-section--compact > .cv-section-title {
+  background: transparent;
+  background-color: transparent;
+  background-image: none;
+  border-left: 3px solid var(--cv-accent);
+  border-bottom: 1px solid color-mix(in srgb, var(--cv-accent) 55%, transparent);
+  border-radius: 0;
+  padding: 2px 0 3px 9px;
+  margin-bottom: calc(6px * var(--cv-spacing-factor, 1));
+  font-size: 0.86em;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  box-shadow: none;
+  width: 100%;
+  display: block;
+}
+
+.cv-page[data-layout-family="pill-labels"] .cv-main-col > .cv-section.cv-section--compact > .cv-section-title,
+.cv-page[data-preset="creative-violet"] .cv-main-col > .cv-section.cv-section--compact > .cv-section-title {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  background-color: var(--cv-accent);
+  color: #ffffff !important;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 16px;
+  padding: 4px 12px;
+  box-shadow: none;
+}
+
 @media print {
   .cv-main-col>.cv-section {
     border-top: 1px solid var(--cv-border) !important;
@@ -4080,6 +4202,33 @@ body.cv-print-mode .cv-appendix-page-marker {
     color: var(--cv-primary) !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .cv-page .cv-main-col > .cv-section.cv-section--compact {
+    padding-top: 8px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .cv-page .cv-main-col > .cv-section.cv-section--compact > .cv-section-title {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-left: 3px solid var(--cv-accent) !important;
+    border-bottom: 1px solid var(--cv-accent) !important;
+    border-radius: 0 !important;
+    padding: 2px 0 3px 9px !important;
+    margin-bottom: 6px !important;
+    box-shadow: none !important;
+  }
+
+  .cv-page[data-layout-family="pill-labels"] .cv-main-col > .cv-section.cv-section--compact > .cv-section-title,
+  .cv-page[data-preset="creative-violet"] .cv-main-col > .cv-section.cv-section--compact > .cv-section-title {
+    background-color: var(--cv-accent) !important;
+    color: #ffffff !important;
+    border-left: none !important;
+    border-bottom: none !important;
+    border-radius: 16px !important;
+    padding: 4px 12px !important;
   }
 
   [data-preset="creative-violet"] .cv-main-col>.cv-section>.cv-section-title {

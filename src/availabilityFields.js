@@ -30,6 +30,46 @@ export const AVAILABILITY_FIELD_DEFS = [
   },
 ];
 
+/**
+ * Pack shown availability fields into rows of up to 2.
+ * Prefer semantic pairs when both sides are visible; leftover fields pack together
+ * so Expected + Available From alone still share one row.
+ */
+export const AVAILABILITY_PREFERRED_PAIRS = [
+  ['lastSalary', 'expectedSalary'],
+  ['noticePeriod', 'availableFrom'],
+];
+
+/**
+ * @param {Record<string, unknown>} avail
+ * @returns {AvailabilityFieldDef[][]}
+ */
+export function getShownAvailabilityRows(avail) {
+  const shown = AVAILABILITY_FIELD_DEFS.filter((f) => isAvailabilityFieldShown(avail, f.key));
+  if (shown.length === 0) return [];
+
+  const used = new Set();
+  /** @type {AvailabilityFieldDef[][]} */
+  const rows = [];
+
+  for (const [a, b] of AVAILABILITY_PREFERRED_PAIRS) {
+    const left = shown.find((f) => f.key === a);
+    const right = shown.find((f) => f.key === b);
+    if (left && right) {
+      rows.push([left, right]);
+      used.add(a);
+      used.add(b);
+    }
+  }
+
+  const leftovers = shown.filter((f) => !used.has(f.key));
+  for (let i = 0; i < leftovers.length; i += 2) {
+    rows.push(leftovers.slice(i, i + 2));
+  }
+
+  return rows;
+}
+
 export function availabilityFieldVisibleKey(fieldKey) {
   return `${fieldKey}Visible`;
 }

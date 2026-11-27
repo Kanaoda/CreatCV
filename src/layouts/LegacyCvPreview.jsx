@@ -24,7 +24,7 @@ import {
 } from '../cvPreview/helpers.js';
 import { formatSkillDots, getSkillEntries } from '../cvPreview/skillRatings.js';
 import { getEffectiveSkillDisplay } from './skillDisplay.js';
-import { AVAILABILITY_FIELD_DEFS, isAvailabilityFieldShown } from '../availabilityFields.js';
+import { getShownAvailabilityRows } from '../availabilityFields.js';
 import {
   findSkillSection,
   getVisibleSkillCategories,
@@ -34,8 +34,8 @@ import {
 } from '../sidebarSections.js';
 
 /**
- * Frozen preview path for legacy templates (e.g. preset 12 modern-tech).
- * DOM and class names must not change without explicit approval.
+ * Legacy preview path for modern-tech (template 11).
+ * Compact rail titles + paired availability rows are intentional for page fit.
  */
 export function LegacyCvPreview({ model }) {
   const {
@@ -498,7 +498,7 @@ export function LegacyCvPreview({ model }) {
             </div>
           )}
           {isSectionVisible(data.sections, 'education') && visibleEducation.length > 0 && (
-            <div className="cv-section" data-cv-anchor="education">
+            <div className="cv-section cv-section--compact" data-cv-anchor="education">
               <div className="cv-section-title">Education</div>
               {visibleEducation.map((edu, idx) => {
                 const eduBullets = visibleBullets(edu.bullets);
@@ -561,7 +561,7 @@ export function LegacyCvPreview({ model }) {
             </div>
           )}
           {isSectionVisible(data.sections, 'references') && visibleReferences.length > 0 && (
-            <div className="cv-section cv-references-section" data-cv-anchor="references">
+            <div className="cv-section cv-references-section cv-section--compact" data-cv-anchor="references">
               <div className="cv-section-title">References</div>
               {visibleReferences.map((ref) => (
                 <div key={ref.id} className="cv-reference-entry">
@@ -579,17 +579,23 @@ export function LegacyCvPreview({ model }) {
             </div>
           )}
           {showAvailabilitySection && (
-            <div className="cv-section cv-availability-section" data-cv-anchor="availability">
-              <div className="cv-section-title">Availability</div>
-              <ul className="emp-bullets cv-availability-list">
-                {AVAILABILITY_FIELD_DEFS.map((field) => (
-                  isAvailabilityFieldShown(data.availability, field.key) ? (
-                    <li key={field.key}>
-                      <strong>{field.previewLabel}:</strong> {data.availability[field.key]}
-                    </li>
-                  ) : null
+            <div className="cv-section cv-availability-section cv-section--compact cv-availability-section--ruled" data-cv-anchor="availability">
+              <div className="cv-availability-divider" role="separator" aria-label="Availability" />
+              <div className="cv-availability-grid">
+                {getShownAvailabilityRows(data.availability).map((row) => (
+                  <div
+                    key={row.map((f) => f.key).join('-')}
+                    className={`cv-availability-row${row.length === 1 ? ' cv-availability-row--single' : ''}`}
+                  >
+                    {row.map((field) => (
+                      <div key={field.key} className="cv-availability-cell">
+                        <strong>{field.previewLabel}:</strong>{' '}
+                        <span>{data.availability[field.key]}</span>
+                      </div>
+                    ))}
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
         </div>
